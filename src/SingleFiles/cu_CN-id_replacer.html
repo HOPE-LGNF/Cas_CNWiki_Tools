@@ -1,0 +1,812 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>中文-ID 替换器</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #f5f7fa;
+    --card: #ffffff;
+    --border: #e4e7ed;
+    --text: #303133;
+    --text-2: #606266;
+    --text-3: #909399;
+    --primary: #409eff;
+    --primary-hover: #66b1ff;
+    --primary-light: #ecf5ff;
+    --success: #67c23a;
+    --success-light: #f0f9eb;
+    --warning: #e6a23c;
+    --warning-light: #fdf6ec;
+    --danger: #f56c6c;
+    --danger-light: #fef0f0;
+    --radius: 8px;
+    --shadow: 0 2px 12px rgba(0,0,0,0.06);
+  }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    padding: 24px;
+    min-height: 100vh;
+  }
+  .container { max-width: 1200px; margin: 0 auto; }
+
+  header {
+    text-align: center;
+    margin-bottom: 28px;
+  }
+  header h1 {
+    font-size: 28px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 8px;
+  }
+  header p {
+    color: var(--text-3);
+    font-size: 14px;
+  }
+
+  .card {
+    background: var(--card);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 20px 24px;
+    margin-bottom: 20px;
+  }
+  .card-title {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .card-title .num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px; height: 24px;
+    background: var(--primary);
+    color: #fff;
+    border-radius: 50%;
+    font-size: 13px;
+    font-weight: 600;
+  }
+  .card-title .hint {
+    font-size: 12px;
+    color: var(--text-3);
+    font-weight: 400;
+    margin-left: 4px;
+  }
+
+  /* 文件加载区 */
+  .file-row {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-bottom: 12px;
+  }
+  .file-btn {
+    position: relative;
+    display: inline-block;
+    padding: 8px 16px;
+    background: var(--primary);
+    color: #fff;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background 0.2s;
+  }
+  .file-btn:hover { background: var(--primary-hover); }
+  .file-btn input { position: absolute; left: 0; top: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
+  .file-name {
+    font-size: 13px;
+    color: var(--text-2);
+  }
+
+  textarea {
+    width: 100%;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 10px 12px;
+    font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--text);
+    background: #fafbfc;
+    resize: vertical;
+    transition: border-color 0.2s;
+  }
+  textarea:focus {
+    outline: none;
+    border-color: var(--primary);
+    background: #fff;
+  }
+  textarea[readonly] { background: #f5f7fa; }
+
+  .stats-row {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-top: 12px;
+  }
+  .stat-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 13px;
+    background: var(--primary-light);
+    color: var(--primary);
+  }
+  .stat-chip.success { background: var(--success-light); color: var(--success); }
+  .stat-chip.warning { background: var(--warning-light); color: var(--warning); }
+  .stat-chip.danger { background: var(--danger-light); color: var(--danger); }
+  .stat-chip .label { color: var(--text-3); }
+  .stat-chip .val { font-weight: 600; }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 9px 20px;
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-weight: 500;
+  }
+  .btn-primary { background: var(--primary); color: #fff; }
+  .btn-primary:hover { background: var(--primary-hover); }
+  .btn-primary:disabled { background: #a0cfff; cursor: not-allowed; }
+  .btn-success { background: var(--success); color: #fff; }
+  .btn-success:hover { background: #85ce61; }
+  .btn-ghost {
+    background: #fff;
+    color: var(--text-2);
+    border: 1px solid var(--border);
+  }
+  .btn-ghost:hover { color: var(--primary); border-color: var(--primary); }
+
+  .action-row {
+    display: flex;
+    gap: 10px;
+    margin-top: 12px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  .char-count {
+    margin-left: auto;
+    font-size: 12px;
+    color: var(--text-3);
+  }
+
+  .result-list {
+    margin-top: 12px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    overflow: hidden;
+  }
+  .result-list.success { background: var(--success-light); border-color: #b3e19d; }
+  .result-list.danger  { background: var(--danger-light);  border-color: #fbc4c4; }
+
+  .result-list .header {
+    display: flex;
+    align-items: center;
+    padding: 10px 14px;
+    cursor: pointer;
+    user-select: none;
+    font-size: 13px;
+    font-weight: 600;
+    transition: background 0.15s;
+  }
+  .result-list.success .header { color: var(--success); }
+  .result-list.danger  .header { color: var(--danger); }
+  .result-list .header:hover { background: rgba(0,0,0,0.03); }
+
+  .result-list .arrow {
+    display: inline-block;
+    width: 0; height: 0;
+    border-left: 5px solid currentColor;
+    border-top: 4px solid transparent;
+    border-bottom: 4px solid transparent;
+    margin-right: 8px;
+    transition: transform 0.2s;
+  }
+  .result-list.collapsed .arrow { transform: rotate(0deg); }
+  .result-list:not(.collapsed) .arrow { transform: rotate(90deg); }
+
+  .result-list .header .title-text { flex: 1; }
+  .result-list .header .count {
+    background: rgba(255,255,255,0.7);
+    padding: 1px 8px;
+    border-radius: 10px;
+    font-size: 12px;
+    font-weight: 600;
+    margin-left: 8px;
+  }
+
+  .result-list .body {
+    max-height: 240px;
+    overflow-y: auto;
+    padding: 4px 14px 10px;
+    border-top: 1px solid rgba(0,0,0,0.06);
+  }
+  .result-list.collapsed .body { display: none; }
+
+  .result-list .item {
+    color: var(--text-2);
+    padding: 3px 0;
+    font-family: "SFMono-Regular", Consolas, monospace;
+    font-size: 12px;
+    line-height: 1.5;
+    word-break: break-all;
+  }
+  .result-list .item .arrow-sep { color: var(--text-3); margin: 0 4px; }
+  .result-list .item .tag {
+    display: inline-block;
+    padding: 0 5px;
+    border-radius: 3px;
+    font-size: 11px;
+    margin-left: 4px;
+    background: rgba(0,0,0,0.06);
+    color: var(--text-3);
+  }
+
+  .toast {
+    position: fixed;
+    top: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(-100px);
+    background: var(--text);
+    color: #fff;
+    padding: 10px 20px;
+    border-radius: 6px;
+    font-size: 14px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    transition: transform 0.3s;
+    z-index: 9999;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+  .toast.success { background: var(--success); }
+  .toast.error { background: var(--danger); }
+
+  .top-banner {
+    background: #fff5f5;
+    border: 1px solid #f56c6c;
+    border-left: 4px solid #f56c6c;
+    border-radius: 6px;
+    padding: 14px 18px;
+    margin-bottom: 20px;
+    color: #c45656;
+    font-size: 14px;
+    line-height: 1.7;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  .top-banner .banner-icon {
+    flex-shrink: 0;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #f56c6c;
+    color: #fff;
+    text-align: center;
+    line-height: 20px;
+    font-weight: 700;
+    font-size: 13px;
+    margin-top: 1px;
+  }
+  .top-banner .banner-text { flex: 1; }
+  .top-banner strong { color: #a23b3b; }
+
+  .help {
+    margin-top: 12px;
+    padding: 12px 14px;
+    background: var(--primary-light);
+    border-radius: 6px;
+    font-size: 13px;
+    color: var(--text-2);
+  }
+  .help code {
+    background: rgba(64,158,255,0.15);
+    padding: 1px 6px;
+    border-radius: 3px;
+    font-family: "SFMono-Regular", Consolas, monospace;
+    color: var(--primary);
+    font-size: 12px;
+  }
+  .help ul { margin: 6px 0 0 18px; }
+  .help li { margin: 3px 0; }
+
+  .grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+  @media (max-width: 768px) {
+    .grid-2 { grid-template-columns: 1fr; }
+  }
+
+  .status-dot {
+    display: inline-block;
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--text-3);
+    margin-right: 6px;
+  }
+  .status-dot.loaded { background: var(--success); }
+  .status-dot.error { background: var(--danger); }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="top-banner">
+    <span class="banner-icon">!</span>
+    <div class="banner-text">
+      <strong>注意：</strong>本模块由 GLM-5.2 许愿式生成，经过测试未发现明显问题，请编辑者在使用完本工具后再次检查条目内容，如有问题请联系：Unauthorized HOPE。
+    </div>
+  </div>
+
+  <header>
+    <h1>中文-ID 替换器</h1>
+    <p>将文本中的 <code style="background:#fff;padding:2px 8px;border-radius:4px;border:1px solid var(--border);">{{类别|中文名}}</code> 自动替换为 <code style="background:#fff;padding:2px 8px;border-radius:4px;border:1px solid var(--border);">{{类别|id=xxx}}</code></p>
+  </header>
+
+  <!-- 步骤1：加载语言文件 -->
+  <div class="card">
+    <div class="card-title">
+      <span class="num">1</span> 加载语言文件
+      <span class="hint">（JSON 格式，需包含 main / layer / other 三个键）</span>
+    </div>
+    <div class="file-row">
+      <label class="file-btn">
+        选择 JSON 文件
+        <input type="file" id="langFile" accept=".json,application/json">
+      </label>
+      <span class="file-name" id="fileName">未选择文件</span>
+      <span id="loadStatus"><span class="status-dot"></span>未加载</span>
+    </div>
+    <textarea id="langText" rows="4" placeholder='或直接粘贴 JSON 内容，例如：&#10;{&#10;  "main": { "ConcreteBlock": "混凝土块", ... },&#10;  "layer": { "SandstoneLayer": "砂岩地层", ... },&#10;  "other": { "Geyser": "间歇泉", ... }&#10;}'></textarea>
+    <div class="action-row">
+      <button class="btn btn-primary" id="loadBtn">加载语言文件</button>
+      <button class="btn btn-ghost" id="loadDemoBtn">填入示例 JSON</button>
+      <button class="btn btn-ghost" id="clearLangBtn">清空</button>
+      <span class="char-count" id="langCharCount">0 字符</span>
+    </div>
+    <div class="stats-row" id="langStats" style="display:none;">
+      <span class="stat-chip"><span class="label">main:</span><span class="val" id="mainCount">0</span></span>
+      <span class="stat-chip"><span class="label">layer:</span><span class="val" id="layerCount">0</span></span>
+      <span class="stat-chip"><span class="label">other:</span><span class="val" id="otherCount">0</span></span>
+    </div>
+  </div>
+
+  <!-- 步骤2&3：输入与输出 -->
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">
+        <span class="num">2</span> 输入内容
+      </div>
+      <textarea id="input" rows="14" placeholder='在此输入需要转换的文本，例如：&#10;这里有一个{{物块|混凝土块}}，&#10;下面是{{陷阱|间歇泉}}，&#10;还有{{地层|砾石荒原}}，&#10;另外{{物品|绷带}}也在main里。'></textarea>
+      <div class="action-row">
+        <button class="btn btn-ghost" id="fillDemoInputBtn">填入示例输入</button>
+        <button class="btn btn-ghost" id="clearInputBtn">清空输入</button>
+        <span class="char-count" id="inputCharCount">0 字符</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">
+        <span class="num">3</span> 输出结果
+      </div>
+      <textarea id="output" rows="14" readonly placeholder='转换结果将显示在这里...'></textarea>
+      <div class="action-row">
+        <button class="btn btn-primary" id="convertBtn">转换</button>
+        <button class="btn btn-success" id="copyBtn">复制结果</button>
+        <button class="btn btn-ghost" id="swapBtn">用结果替换输入</button>
+      </div>
+      <div class="stats-row" id="convertStats" style="display:none;">
+        <span class="stat-chip success"><span class="label">成功:</span><span class="val" id="successCount">0</span></span>
+        <span class="stat-chip danger"><span class="label">未找到:</span><span class="val" id="notFoundCount">0</span></span>
+        <span class="stat-chip"><span class="label">总计:</span><span class="val" id="totalCount">0</span></span>
+      </div>
+      <div class="result-list success" id="successList" style="display:none;">
+        <div class="header" data-target="successList">
+          <span class="arrow"></span>
+          <span class="title-text">成功转换的片段</span>
+          <span class="count" id="successListCount">0</span>
+        </div>
+        <div class="body" id="successListBody"></div>
+      </div>
+
+      <div class="result-list danger" id="notFoundList" style="display:none;">
+        <div class="header" data-target="notFoundList">
+          <span class="arrow"></span>
+          <span class="title-text">未找到的片段（已保持原样）</span>
+          <span class="count" id="notFoundListCount">0</span>
+        </div>
+        <div class="body" id="notFoundListBody"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 使用说明 -->
+  <div class="card">
+    <div class="card-title">使用说明</div>
+    <div class="help">
+      <p><strong>匹配规则：</strong>工具会查找文本中所有形如 <code>{{类别|中文名}}</code> 的片段。</p>
+      <ul>
+        <li>当 <code>类别</code> 为 <strong>物品</strong> 时，从语言文件的 <code>main</code> 字典中查找；</li>
+        <li>当 <code>类别</code> 为 <strong>地层</strong> 时，从 <code>layer</code> 字典中查找；</li>
+        <li>其他类别（如 <strong>物块</strong>、<strong>陷阱</strong>、<strong>建筑</strong> 等）一律从 <code>other</code> 字典中查找。</li>
+      </ul>
+      <p style="margin-top:8px;"><strong>子类后缀：</strong>类别支持 <code>类别/子类</code> 格式，如 <code>地层/链接</code>、<code>物品/图标</code>、<code>物块/文本</code>、<code>物块/图标文本</code> 等。工具会取 <code>/</code> 前的基础类别判断字典，查找逻辑与不带后缀时完全一致，输出时保留原始类别。</p>
+      <p style="margin-top:8px;"><strong>额外参数：</strong>片段可带后续参数，如 <code>{{地层/图标文本|干涸沙漠|图标大小=28px}}</code>。工具只替换第一个 <code>|</code> 后的中文名，后续参数会原样保留。</p>
+      <p style="margin-top:8px;"><strong>查找方式：</strong>在对应字典中，找到 <strong>值</strong> 等于「中文名」的条目，取其 <strong>键</strong> 作为 id，替换为 <code>{{类别|id=键}}</code>。</p>
+      <p style="margin-top:8px;"><strong>示例：</strong></p>
+      <ul>
+        <li>若 <code>other</code> 中有 <code>"geyser": "间歇泉"</code>，则 <code>{{陷阱|间歇泉}}</code> → <code>{{陷阱|id=geyser}}</code></li>
+        <li>若 <code>other</code> 中有 <code>"concretetile": "混凝土块"</code>，则 <code>{{物块|混凝土块}}</code> → <code>{{物块|id=concretetile}}</code></li>
+        <li>若 <code>main</code> 中有 <code>"bandage": "绷带"</code>，则 <code>{{物品|绷带}}</code> → <code>{{物品|id=bandage}}</code></li>
+        <li>若 <code>layer</code> 中有 <code>"Gravel_Lands": "砾石荒原"</code>，则 <code>{{地层|砾石荒原}}</code> → <code>{{地层|id=Gravel_Lands}}</code></li>
+        <li>带子类后缀：<code>{{地层/链接|干涸沙漠}}</code> → <code>{{地层/链接|id=Dried_Desert}}</code>（按 <code>地层</code> 查 layer）</li>
+        <li>带子类后缀：<code>{{物块/图标|混凝土块}}</code> → <code>{{物块/图标|id=concretetile}}</code>（按 <code>物块</code> 查 other）</li>
+        <li>带额外参数：<code>{{地层/图标文本|干涸沙漠|图标大小=28px}}</code> → <code>{{地层/图标文本|id=Dried_Desert|图标大小=28px}}</code></li>
+      </ul>
+      <p style="margin-top:8px;"><strong>注意：</strong>已经转换过的 <code>{{类别|id=xxx}}</code> 不会被重复处理；未找到对应中文名的片段将保持原样并在下方列出。</p>
+    </div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  // ============ 全局状态 ============
+  let langData = null;       // 加载后的语言文件对象
+  let reverseIndex = null;   // 反向索引：{ main: {中文名: id}, layer: {...}, other: {...} }
+
+  // ============ DOM 引用 ============
+  const $ = id => document.getElementById(id);
+  const langFile = $('langFile');
+  const fileName = $('fileName');
+  const langText = $('langText');
+  const loadBtn = $('loadBtn');
+  const loadDemoBtn = $('loadDemoBtn');
+  const clearLangBtn = $('clearLangBtn');
+  const langCharCount = $('langCharCount');
+  const langStats = $('langStats');
+  const mainCount = $('mainCount');
+  const layerCount = $('layerCount');
+  const otherCount = $('otherCount');
+  const loadStatus = $('loadStatus');
+
+  const input = $('input');
+  const output = $('output');
+  const inputCharCount = $('inputCharCount');
+  const fillDemoInputBtn = $('fillDemoInputBtn');
+  const clearInputBtn = $('clearInputBtn');
+  const convertBtn = $('convertBtn');
+  const copyBtn = $('copyBtn');
+  const swapBtn = $('swapBtn');
+  const convertStats = $('convertStats');
+  const successCount = $('successCount');
+  const notFoundCount = $('notFoundCount');
+  const totalCount = $('totalCount');
+  const successList = $('successList');
+  const successListBody = $('successListBody');
+  const successListCount = $('successListCount');
+  const notFoundList = $('notFoundList');
+  const notFoundListBody = $('notFoundListBody');
+  const notFoundListCount = $('notFoundListCount');
+  const toast = $('toast');
+
+  // ============ 工具函数 ============
+  function showToast(msg, type) {
+    toast.textContent = msg;
+    toast.className = 'toast show' + (type ? ' ' + type : '');
+    clearTimeout(showToast._t);
+    showToast._t = setTimeout(() => {
+      toast.className = 'toast' + (type ? ' ' + type : '');
+    }, 2200);
+  }
+
+  function setLoadStatus(state, text) {
+    const dot = state === 'loaded' ? 'loaded' : (state === 'error' ? 'error' : '');
+    loadStatus.innerHTML = '<span class="status-dot ' + dot + '"></span>' + text;
+  }
+
+  // HTML 转义，防止列表内容中的 < > & 等字符破坏页面
+  function escapeHtml(str) {
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+  }
+
+  // 构建反向索引：值 -> 键
+  function buildReverseIndex(data) {
+    const idx = { main: {}, layer: {}, other: {} };
+    ['main', 'layer', 'other'].forEach(k => {
+      const dict = data[k];
+      if (dict && typeof dict === 'object') {
+        for (const key in dict) {
+          const val = dict[key];
+          // 只处理字符串值；如果已有同值，保留第一个
+          if (typeof val === 'string' && !(val in idx[k])) {
+            idx[k][val] = key;
+          }
+        }
+      }
+    });
+    return idx;
+  }
+
+  // ============ 加载语言文件 ============
+  function loadLanguage() {
+    const text = langText.value.trim();
+    if (!text) {
+      showToast('请粘贴或选择 JSON 文件', 'error');
+      return;
+    }
+    try {
+      const data = JSON.parse(text);
+      if (typeof data !== 'object' || data === null) {
+        throw new Error('JSON 根节点必须是对象');
+      }
+      langData = data;
+      reverseIndex = buildReverseIndex(data);
+
+      // 统计
+      const mc = data.main && typeof data.main === 'object' ? Object.keys(data.main).length : 0;
+      const lc = data.layer && typeof data.layer === 'object' ? Object.keys(data.layer).length : 0;
+      const oc = data.other && typeof data.other === 'object' ? Object.keys(data.other).length : 0;
+      mainCount.textContent = mc;
+      layerCount.textContent = lc;
+      otherCount.textContent = oc;
+      langStats.style.display = 'flex';
+      setLoadStatus('loaded', '已加载');
+      showToast('语言文件加载成功', 'success');
+    } catch (e) {
+      langData = null;
+      reverseIndex = null;
+      langStats.style.display = 'none';
+      setLoadStatus('error', '加载失败：' + e.message);
+      showToast('JSON 解析失败：' + e.message, 'error');
+    }
+  }
+
+  // 文件上传
+  langFile.addEventListener('change', e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    fileName.textContent = file.name;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      langText.value = ev.target.result;
+      updateCharCount(langText, langCharCount);
+      loadLanguage();
+    };
+    reader.onerror = () => showToast('文件读取失败', 'error');
+    reader.readAsText(file, 'UTF-8');
+  });
+
+  loadBtn.addEventListener('click', loadLanguage);
+  clearLangBtn.addEventListener('click', () => {
+    langText.value = '';
+    langFile.value = '';
+    fileName.textContent = '未选择文件';
+    langData = null;
+    reverseIndex = null;
+    langStats.style.display = 'none';
+    setLoadStatus('', '未加载');
+    updateCharCount(langText, langCharCount);
+  });
+
+  // ============ 示例数据 ============
+  const DEMO_LANG = {
+    "name": "示例语言文件",
+    "main": {
+      "bandage": "绷带",
+      "morphine": "吗啡注射器",
+      "bloodbag": "血袋",
+      "splint": "夹板"
+    },
+    "other": {
+      "geyser": "间歇泉",
+      "lavageyser": "间歇泉",
+      "concretetile": "混凝土块",
+      "sandstone": "砂岩",
+      "beartrap": "老旧机械",
+      "barbedwirefence": "铁丝网"
+    },
+    "layer": {
+      "Gravel_Lands": "砾石荒原",
+      "Dried_Desert": "干涸沙漠",
+      "Wasteland": "辐射废土",
+      "Frozen_Chasm": "冰封裂谷"
+    }
+  };
+
+  const DEMO_INPUT = '这里有一个{{物块|混凝土块}}，下面是{{陷阱|间歇泉}}，\n还有{{地层|砾石荒原}}，另外{{物品|绷带}}也在main里。\n\n支持子类后缀格式：\n{{地层/链接|干涸沙漠}}、{{地层/图标|冰封裂谷}}、{{地层/文本|辐射废土}}、{{地层/图标文本|深林丛渊}}\n{{物品/链接|吗啡注射器}}、{{物品/图标|血袋}}、{{物品/文本|夹板}}、{{物品/图标文本|绷带}}\n{{物块/链接|砂岩}}、{{物块/图标|混凝土块}}、{{物块/文本|铁丝网}}、{{物块/图标文本|间歇泉}}\n\n支持额外参数（保留不变）：\n{{地层/图标文本|干涸沙漠|图标大小=28px}}\n{{物块/图标|混凝土块|size=32|align=center}}\n{{物品|绷带|数量=5}}\n\n注意：{{物块|id=concretetile}} 已转换的不会被重复处理。\n未找到的会保持原样：{{物块/链接|不存在的方块|图标大小=28px}}';
+
+  loadDemoBtn.addEventListener('click', () => {
+    langText.value = JSON.stringify(DEMO_LANG, null, 2);
+    updateCharCount(langText, langCharCount);
+    loadLanguage();
+  });
+
+  fillDemoInputBtn.addEventListener('click', () => {
+    input.value = DEMO_INPUT;
+    updateCharCount(input, inputCharCount);
+    showToast('已填入示例输入', 'success');
+  });
+
+  clearInputBtn.addEventListener('click', () => {
+    input.value = '';
+    output.value = '';
+    updateCharCount(input, inputCharCount);
+    convertStats.style.display = 'none';
+    successList.style.display = 'none';
+    notFoundList.style.display = 'none';
+  });
+
+  // ============ 字符计数 ============
+  function updateCharCount(area, label) {
+    label.textContent = area.value.length + ' 字符';
+  }
+  langText.addEventListener('input', () => updateCharCount(langText, langCharCount));
+  input.addEventListener('input', () => updateCharCount(input, inputCharCount));
+
+  // ============ 转换核心逻辑 ============
+  // 匹配 {{类别|中文名}}，但排除已转换的 {{类别|id=xxx}}
+  // 类别和中文名都不能包含 | { } 字符
+  // 中文名部分不能以 "id=" 开头（避免重复转换）
+  // 支持后续额外参数：{{类别|中文名|参数1|参数2}}，extra 捕获 "|参数1|参数2"
+  const PATTERN = /\{\{([^|{}]+)\|((?!id=)[^|{}]+)((?:\|[^|{}]*)*)\}\}/g;
+
+  function pickDictKey(category) {
+    // 支持「类别/子类」格式，如 地层/链接、物品/图标、物块/文本
+    // 取 / 前的部分作为基础类别来判断字典
+    const base = category.split('/')[0];
+    if (base === '物品') return 'main';
+    if (base === '地层') return 'layer';
+    return 'other';
+  }
+
+  function convert() {
+    if (!reverseIndex) {
+      showToast('请先加载语言文件', 'error');
+      return;
+    }
+    const text = input.value;
+    let total = 0, success = 0;
+    const succeeded = [];
+    const notFound = [];
+
+    const result = text.replace(PATTERN, (match, category, name, extra) => {
+      total++;
+      const dictKey = pickDictKey(category);
+      const dict = reverseIndex[dictKey] || {};
+      const id = dict[name];
+      if (id !== undefined) {
+        success++;
+        succeeded.push({ category, name, id, dictKey, extra: extra || '' });
+        return '{{' + category + '|id=' + id + (extra || '') + '}}';
+      } else {
+        notFound.push({ category, name, dictKey, extra: extra || '' });
+        return match; // 保持原样
+      }
+    });
+
+    output.value = result;
+    successCount.textContent = success;
+    notFoundCount.textContent = notFound.length;
+    totalCount.textContent = total;
+    convertStats.style.display = 'flex';
+
+    // 渲染成功列表
+    successListCount.textContent = success;
+    if (succeeded.length > 0) {
+      let html = '';
+      succeeded.forEach(item => {
+        const before = '{{' + item.category + '|' + item.name + item.extra + '}}';
+        const after  = '{{' + item.category + '|id=' + item.id + item.extra + '}}';
+        html += '<div class="item">' + escapeHtml(before)
+              + '<span class="arrow-sep">→</span>'
+              + escapeHtml(after)
+              + '<span class="tag">' + item.dictKey + '</span>'
+              + '</div>';
+      });
+      successListBody.innerHTML = html;
+      successList.style.display = 'block';
+    } else {
+      successList.style.display = 'none';
+    }
+
+    // 渲染未找到列表
+    notFoundListCount.textContent = notFound.length;
+    if (notFound.length > 0) {
+      let html = '';
+      notFound.forEach(item => {
+        const before = '{{' + item.category + '|' + item.name + item.extra + '}}';
+        html += '<div class="item">' + escapeHtml(before)
+              + '<span class="arrow-sep">→</span>'
+              + '未找到'
+              + '<span class="tag">' + item.dictKey + '</span>'
+              + '</div>';
+      });
+      notFoundListBody.innerHTML = html;
+      notFoundList.style.display = 'block';
+    } else {
+      notFoundList.style.display = 'none';
+    }
+
+    if (total === 0) {
+      showToast('未找到任何 {{类别|中文名}} 片段', 'warning');
+    } else if (notFound.length === 0) {
+      showToast('全部转换成功（' + success + ' 项）', 'success');
+    } else {
+      showToast('转换完成：成功 ' + success + ' / ' + total, 'warning');
+    }
+  }
+
+  convertBtn.addEventListener('click', convert);
+
+  // ============ 复制结果 ============
+  copyBtn.addEventListener('click', async () => {
+    if (!output.value) {
+      showToast('没有可复制的内容', 'error');
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(output.value);
+      showToast('已复制到剪贴板', 'success');
+    } catch (e) {
+      // 降级方案
+      output.select();
+      document.execCommand('copy');
+      showToast('已复制到剪贴板', 'success');
+    }
+  });
+
+  // ============ 用结果替换输入 ============
+  swapBtn.addEventListener('click', () => {
+    if (!output.value) {
+      showToast('没有可替换的内容', 'error');
+      return;
+    }
+    input.value = output.value;
+    output.value = '';
+    updateCharCount(input, inputCharCount);
+    convertStats.style.display = 'none';
+    successList.style.display = 'none';
+    notFoundList.style.display = 'none';
+    showToast('已用结果替换输入', 'success');
+  });
+
+  // ============ 列表折叠/展开 ============
+  // 点击任意 result-list 的 header 即可切换该列表的折叠状态
+  document.querySelectorAll('.result-list .header').forEach(header => {
+    header.addEventListener('click', () => {
+      const list = header.parentElement;
+      list.classList.toggle('collapsed');
+    });
+  });
+
+  // ============ 初始化 ============
+  updateCharCount(langText, langCharCount);
+  updateCharCount(input, inputCharCount);
+  setLoadStatus('', '未加载');
+</script>
+</body>
+</html>

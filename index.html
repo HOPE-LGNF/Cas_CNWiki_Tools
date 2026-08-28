@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>未知伤亡维基 · 小工具</title>
+    <style>
+        /* ===== 使用提供的 CSS 变量 ===== */
+        :root {
+            --cu-color-transparent: transparent;
+            --cu-color-page-bg: rgba(20, 20, 20, 0.9);
+            --cu-color-page-bg-solid: #141414;
+            --cu-color-page-bg-popup: rgba(20, 20, 20, 0.96);
+            --cu-color-panel-bg: #000;
+            --cu-color-panel-head-bg: #111;
+            --cu-color-panel-hover-bg: #1a1a1a;
+            --cu-color-panel-raised-bg: #202020;
+            --cu-color-panel-overlay-bg: rgba(0, 0, 0, 0.42);
+            --cu-color-text: #babdc4;
+            --cu-color-text-muted: #aaa;
+            --cu-color-text-soft: #e1e1e1;
+            --cu-color-text-bright: #fff;
+            --cu-color-text-on-accent: #10100d;
+            --cu-color-code-bg: #101010;
+            --cu-color-code-bg-soft: #171717;
+            --cu-color-code-text: #d8d8d8;
+            --cu-color-code-muted: #9c9c9c;
+            --cu-color-code-border: var(--cu-color-border-soft);
+            --cu-color-code-line-number: #747474;
+            --cu-color-code-blue: #b8bec8;
+            --cu-color-code-punctuation: var(--cu-color-code-blue);
+            --cu-color-code-green: #aeb9aa;
+            --cu-color-code-purple: #bdb7c5;
+            --cu-color-code-orange: #c1b39c;
+            --cu-color-code-red: #c59a9a;
+            --cu-color-link: #ffd96a;
+            --cu-color-link-new: #d33;
+            --cu-color-focus: #d6c484;
+            --cu-color-focus-bg-subtle: rgba(214, 196, 132, 0.14);
+            --cu-color-focus-bg: rgba(214, 196, 132, 0.2);
+            --cu-color-danger-bg-subtle: rgba(255, 127, 127, 0.12);
+            --cu-color-surface-tint: rgba(255, 255, 255, 0.08);
+            --cu-color-border: var(--cu-color-text-bright);
+            --cu-color-border-soft: rgba(255, 255, 255, 0.16);
+            --cu-color-border-muted: rgba(255, 255, 255, 0.28);
+            --cu-color-border-strong: rgba(255, 255, 255, 0.5);
+            --cu-color-link-bg-subtle: rgba(255, 217, 106, 0.1);
+            --cu-color-scroll-hint-bg: rgba(0, 0, 0, 0.94);
+            --cu-color-scroll-hint-text: rgba(255, 255, 255, 0.82);
+            --cu-color-shadow: rgba(0, 0, 0, 0.35);
+            --cu-color-shadow-strong: rgba(0, 0, 0, 0.9);
+            --cu-color-shadow-transparent: rgba(0, 0, 0, 0);
+            --cu-font-size-xs: 13px;
+            --cu-font-size-lg: 22px;
+            --cu-font-size-relative-sm: 85%;
+            --cu-font-size-doc-title: 1.1em;
+            --cu-line-height-name: 0.9;
+            --cu-line-height-button: 1.4;
+            --cu-line-height-body: 1.7;
+            --cu-space-2xs: 2px;
+            --cu-space-xs: 4px;
+            --cu-space-lg: 10px;
+            --cu-space-xl: 12px;
+            --cu-space-2xl: 16px;
+            --cu-space-5xl: 32px;
+            --cu-cursor-default: url(https://huiji-public.huijistatic.com/casualtiesunknown/uploads/4/4d/Ui_Cursor.png) 0 0, default;
+            --cu-cursor-pointer: url(https://huiji-public.huijistatic.com/casualtiesunknown/uploads/0/06/Ui_CursorPointer.png) 0 0, pointer;
+            --cu-cursor-text: url(https://huiji-public.huijistatic.com/casualtiesunknown/uploads/5/55/Ui_CursorText.png) 6 15, text;
+            --cu-cursor-help: url(https://huiji-public.huijistatic.com/casualtiesunknown/uploads/9/93/Ui_CursorHelp.png) 0 0, help;
+            --cu-cursor-not-allow: url(https://huiji-public.huijistatic.com/casualtiesunknown/uploads/8/85/Ui_CursorNotAllow.png) 0 0, not-allowed;
+            --cu-radius-sm: 4px;
+            --cu-border-width: 1px;
+            --cu-link-underline-height: 2px;
+            --cu-link-underline-offset: -2px;
+            --cu-table-responsive-min-width: 340px;
+            --cu-infobox-max-width: 340px;
+            --cu-infobox-toggle-right: 22px;
+            --cu-list-indent: 1.5em;
+            --cu-list-nested-indent: 1.25em;
+            --cu-list-item-margin-y: 0.3em;
+            --cu-list-nested-margin-y: 0.25em;
+            --cu-list-marker-size: 0.35em;
+            --cu-list-marker-center-y: 0.85em;
+            --cu-list-marker-offset-x: -1em;
+            --cu-anchor-scroll-offset: 90px;
+            --cu-transition-base: 0.25s ease;
+
+            /* 页面额外变量 */
+            --page-max-width: 1100px;
+            --card-min-width: 180px;
+        }
+
+        /* ===== 全局重置 & 基础 ===== */
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: var(--cu-color-page-bg-solid);
+            background-image: radial-gradient(ellipse at 20% 50%, rgba(255, 217, 106, 0.03) 0%, transparent 60%);
+            color: var(--cu-color-text);
+            line-height: var(--cu-line-height-body);
+            min-height: 100vh;
+            padding: var(--cu-space-2xl) var(--cu-space-xl);
+            cursor: var(--cu-cursor-default);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        a {
+            color: var(--cu-color-link);
+            text-decoration: none;
+            cursor: var(--cu-cursor-pointer);
+            transition: color var(--cu-transition-base);
+        }
+        a:hover {
+            color: var(--cu-color-text-bright);
+        }
+
+        /* ===== 容器 ===== */
+        .container {
+            max-width: var(--page-max-width);
+            width: 100%;
+            margin: 0 auto;
+        }
+
+        /* ===== 头部 ===== */
+        .page-header {
+            padding: var(--cu-space-2xl) 0 var(--cu-space-5xl);
+            border-bottom: 1px solid var(--cu-color-border-soft);
+            margin-bottom: var(--cu-space-5xl);
+            display: flex;
+            flex-wrap: wrap;
+            align-items: flex-end;
+            justify-content: space-between;
+            gap: var(--cu-space-xl);
+        }
+
+        .page-header-left {
+            display: flex;
+            flex-direction: column;
+            gap: var(--cu-space-xs);
+        }
+
+        .page-header h1 {
+            font-size: var(--cu-font-size-lg);
+            font-weight: 600;
+            color: var(--cu-color-text-bright);
+            letter-spacing: 0.02em;
+            line-height: var(--cu-line-height-name);
+            display: flex;
+            align-items: center;
+            gap: var(--cu-space-lg);
+        }
+
+        .page-header h1 .badge {
+            font-size: var(--cu-font-size-xs);
+            font-weight: 400;
+            color: var(--cu-color-text-muted);
+            background: var(--cu-color-panel-raised-bg);
+            padding: 0.2em 0.7em;
+            border-radius: 100px;
+            border: 1px solid var(--cu-color-border-soft);
+            letter-spacing: 0.02em;
+        }
+
+        .page-header .subtitle {
+            color: var(--cu-color-text-muted);
+            font-size: var(--cu-font-size-relative-sm);
+        }
+
+        .page-header .actions {
+            display: flex;
+            gap: var(--cu-space-lg);
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: var(--cu-space-xs);
+            padding: 0.5em 1.2em;
+            background: var(--cu-color-panel-raised-bg);
+            color: var(--cu-color-text-soft);
+            border: 1px solid var(--cu-color-border-soft);
+            border-radius: var(--cu-radius-sm);
+            font-size: var(--cu-font-size-xs);
+            font-weight: 500;
+            cursor: var(--cu-cursor-pointer);
+            transition: all var(--cu-transition-base);
+            line-height: var(--cu-line-height-button);
+            font-family: inherit;
+        }
+        .btn:hover {
+            background: var(--cu-color-panel-hover-bg);
+            border-color: var(--cu-color-border-muted);
+            color: var(--cu-color-text-bright);
+        }
+        .btn:active {
+            transform: scale(0.97);
+        }
+        .btn-primary {
+            background: var(--cu-color-link);
+            color: var(--cu-color-text-on-accent);
+            border-color: var(--cu-color-link);
+        }
+        .btn-primary:hover {
+            background: #ffe07a;
+            border-color: #ffe07a;
+            color: var(--cu-color-text-on-accent);
+        }
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* ===== 统计信息 ===== */
+        .stats {
+            display: flex;
+            gap: var(--cu-space-2xl);
+            padding: var(--cu-space-lg) 0 var(--cu-space-2xl);
+            color: var(--cu-color-text-muted);
+            font-size: var(--cu-font-size-xs);
+            border-bottom: 1px solid var(--cu-color-border-soft);
+            margin-bottom: var(--cu-space-2xl);
+            flex-wrap: wrap;
+        }
+        .stats span {
+            display: flex;
+            align-items: center;
+            gap: var(--cu-space-xs);
+        }
+        .stats .num {
+            color: var(--cu-color-text-bright);
+            font-weight: 600;
+        }
+
+        /* ===== 工具网格 ===== */
+        .tool-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(var(--card-min-width), 1fr));
+            gap: var(--cu-space-2xl);
+            margin-top: var(--cu-space-lg);
+        }
+
+        /* ===== 卡片 ===== */
+        .tool-card {
+            background: var(--cu-color-panel-bg);
+            border: 1px solid var(--cu-color-border-soft);
+            border-radius: var(--cu-radius-sm);
+            padding: var(--cu-space-2xl) var(--cu-space-xl) var(--cu-space-xl);
+            transition: all var(--cu-transition-base);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            cursor: var(--cu-cursor-pointer);
+        }
+        .tool-card:hover {
+            background: var(--cu-color-panel-hover-bg);
+            border-color: var(--cu-color-border-muted);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px var(--cu-color-shadow);
+        }
+        .tool-card:active {
+            transform: scale(0.98);
+        }
+
+        .tool-card .icon {
+            font-size: 1.8em;
+            line-height: 1;
+            margin-bottom: var(--cu-space-lg);
+            opacity: 0.7;
+            transition: opacity var(--cu-transition-base);
+        }
+        .tool-card:hover .icon {
+            opacity: 1;
+        }
+
+        .tool-card .name {
+            font-size: 1em;
+            font-weight: 500;
+            color: var(--cu-color-text-bright);
+            line-height: var(--cu-line-height-name);
+            margin-bottom: var(--cu-space-xs);
+            word-break: break-word;
+        }
+
+        .tool-card .path {
+            font-size: var(--cu-font-size-xs);
+            color: var(--cu-color-text-muted);
+            opacity: 0.6;
+            font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+            word-break: break-all;
+            margin-top: auto;
+            padding-top: var(--cu-space-lg);
+            border-top: 1px solid var(--cu-color-border-soft);
+        }
+
+        .tool-card .arrow {
+            position: absolute;
+            top: var(--cu-space-xl);
+            right: var(--cu-space-xl);
+            color: var(--cu-color-text-muted);
+            opacity: 0.2;
+            font-size: 1.1em;
+            transition: all var(--cu-transition-base);
+        }
+        .tool-card:hover .arrow {
+            opacity: 0.7;
+            color: var(--cu-color-link);
+            transform: translateX(3px);
+        }
+
+        /* ===== 空状态 & 加载 ===== */
+        .empty-state,
+        .error-state {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: var(--cu-space-5xl) var(--cu-space-2xl);
+            color: var(--cu-color-text-muted);
+            border: 1px dashed var(--cu-color-border-soft);
+            border-radius: var(--cu-radius-sm);
+            background: var(--cu-color-panel-bg);
+        }
+        .empty-state .emoji,
+        .error-state .emoji {
+            font-size: 2.4em;
+            display: block;
+            margin-bottom: var(--cu-space-xl);
+        }
+        .empty-state .hint,
+        .error-state .hint {
+            font-size: var(--cu-font-size-xs);
+            margin-top: var(--cu-space-lg);
+            opacity: 0.6;
+        }
+        .error-state {
+            border-color: rgba(255, 127, 127, 0.25);
+        }
+        .error-state .detail {
+            font-family: ui-monospace, monospace;
+            font-size: var(--cu-font-size-xs);
+            background: var(--cu-color-code-bg);
+            padding: var(--cu-space-lg) var(--cu-space-xl);
+            border-radius: var(--cu-radius-sm);
+            margin-top: var(--cu-space-lg);
+            display: inline-block;
+            color: var(--cu-color-code-muted);
+            max-width: 100%;
+            overflow: auto;
+        }
+
+        /* ===== 加载动画 ===== */
+        .loader {
+            grid-column: 1 / -1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: var(--cu-space-xl);
+            padding: var(--cu-space-5xl) 0;
+            color: var(--cu-color-text-muted);
+        }
+        .loader .spinner {
+            width: 32px;
+            height: 32px;
+            border: 2px solid var(--cu-color-border-soft);
+            border-top-color: var(--cu-color-link);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* ===== 页脚 ===== */
+        .page-footer {
+            margin-top: var(--cu-space-5xl);
+            padding-top: var(--cu-space-2xl);
+            border-top: 1px solid var(--cu-color-border-soft);
+            font-size: var(--cu-font-size-xs);
+            color: var(--cu-color-text-muted);
+            text-align: center;
+            opacity: 0.5;
+            width: 100%;
+        }
+
+        /* ===== 响应式 ===== */
+        @media (max-width: 640px) {
+            body {
+                padding: var(--cu-space-xl) var(--cu-space-lg);
+            }
+            .page-header {
+                flex-direction: column;
+                align-items: stretch;
+                gap: var(--cu-space-xl);
+                padding-bottom: var(--cu-space-2xl);
+                margin-bottom: var(--cu-space-2xl);
+            }
+            .page-header .actions {
+                justify-content: flex-start;
+            }
+            .page-header h1 {
+                font-size: 1.15em;
+                flex-wrap: wrap;
+            }
+            .page-header h1 .badge {
+                font-size: 0.65em;
+            }
+            .tool-grid {
+                grid-template-columns: 1fr 1fr;
+                gap: var(--cu-space-lg);
+            }
+            :root {
+                --card-min-width: 130px;
+            }
+            .stats {
+                gap: var(--cu-space-xl);
+                font-size: 0.75em;
+            }
+        }
+
+        @media (max-width: 420px) {
+            .tool-grid {
+                grid-template-columns: 1fr;
+            }
+            .btn {
+                padding: 0.4em 0.9em;
+                font-size: 0.75em;
+            }
+        }
+
+        /* ===== 工具提示 ===== */
+        .toast {
+            position: fixed;
+            bottom: var(--cu-space-2xl);
+            left: 50%;
+            transform: translateX(-50%) translateY(20px);
+            background: var(--cu-color-scroll-hint-bg);
+            color: var(--cu-color-scroll-hint-text);
+            padding: var(--cu-space-lg) var(--cu-space-2xl);
+            border-radius: var(--cu-radius-sm);
+            font-size: var(--cu-font-size-xs);
+            border: 1px solid var(--cu-color-border-soft);
+            opacity: 0;
+            transition: all 0.4s ease;
+            pointer-events: none;
+            z-index: 999;
+            white-space: nowrap;
+        }
+        .toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+
+        <!-- ===== 头部 ===== -->
+        <header class="page-header">
+            <div class="page-header-left">
+                <h1>
+                    ⚙️ 未知伤亡维基 · 小工具
+                    <span class="badge">工具集</span>
+                </h1>
+                <div class="subtitle">浏览并使用所有可用的小工具 · 自动扫描 <code style="background:var(--cu-color-code-bg);padding:0.1em 0.5em;border-radius:2px;font-size:0.9em;">src/</code> 目录</div>
+            </div>
+            <div class="actions">
+                <button class="btn" id="refreshBtn" title="重新扫描 src 目录">
+                    <span>⟳</span> 刷新列表
+                </button>
+            </div>
+        </header>
+
+        <!-- ===== 统计 ===== -->
+        <div class="stats" id="statsBar">
+            <span>📦 工具总数：<span class="num" id="toolCount">—</span></span>
+            <span>📂 扫描目录：<code style="background:var(--cu-color-code-bg);padding:0.1em 0.5em;border-radius:2px;font-size:0.9em;">src/</code></span>
+            <span id="statusText" style="color:var(--cu-color-text-muted);">⏳ 加载中…</span>
+        </div>
+
+        <!-- ===== 工具列表 ===== -->
+        <div id="toolContainer">
+            <div class="loader">
+                <div class="spinner"></div>
+                <span>正在扫描 src 目录…</span>
+            </div>
+        </div>
+
+        <!-- ===== 页脚 ===== -->
+        <footer class="page-footer">
+            <span>© 2026 未知伤亡维基 · 小工具导航 &mdash; 自动发现 · 简约实用</span>
+        </footer>
+
+    </div>
+
+    <!-- ===== Toast 消息 ===== -->
+    <div class="toast" id="toast"></div>
+
+    <script>
+        (function() {
+            'use strict';
+
+            const container = document.getElementById('toolContainer');
+            const toolCountEl = document.getElementById('toolCount');
+            const statusText = document.getElementById('statusText');
+            const refreshBtn = document.getElementById('refreshBtn');
+            const toastEl = document.getElementById('toast');
+
+            let toastTimer = null;
+            let currentTools = [];
+
+            // ---- Toast ----
+            function showToast(msg, duration) {
+                duration = duration || 2500;
+                toastEl.textContent = msg;
+                toastEl.classList.add('show');
+                clearTimeout(toastTimer);
+                toastTimer = setTimeout(() => {
+                    toastEl.classList.remove('show');
+                }, duration);
+            }
+
+            // ---- 格式化文件名 ----
+            function formatName(filename) {
+                // 去除 .html 后缀，将 - 和 _ 替换为空格，首字母大写
+                let name = filename.replace(/\.html$/i, '');
+                name = name.replace(/[-_]/g, ' ');
+                name = name.replace(/\b\w/g, c => c.toUpperCase());
+                return name || filename;
+            }
+
+            // ---- 获取图标 ----
+            function getIcon(name) {
+                const lower = name.toLowerCase();
+                if (lower.includes('map') || lower.includes('地图')) return '🗺️';
+                if (lower.includes('calc') || lower.includes('计算')) return '🧮';
+                if (lower.includes('chart') || lower.includes('图表')) return '📊';
+                if (lower.includes('search') || lower.includes('搜索')) return '🔍';
+                if (lower.includes('editor') || lower.includes('编辑')) return '✏️';
+                if (lower.includes('viewer') || lower.includes('查看')) return '👁️';
+                if (lower.includes('export') || lower.includes('导出')) return '📤';
+                if (lower.includes('import') || lower.includes('导入')) return '📥';
+                if (lower.includes('config') || lower.includes('配置')) return '⚙️';
+                if (lower.includes('help') || lower.includes('帮助')) return '❓';
+                if (lower.includes('about') || lower.includes('关于')) return 'ℹ️';
+                if (lower.includes('index') || lower.includes('主页')) return '🏠';
+                return '📄';
+            }
+
+            // ---- 渲染工具列表 ----
+            function renderTools(tools) {
+                currentTools = tools;
+                toolCountEl.textContent = tools.length;
+
+                if (tools.length === 0) {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <span class="emoji">🔎</span>
+                            <div>在 <code style="background:var(--cu-color-code-bg);padding:0.1em 0.5em;border-radius:2px;">src/</code> 目录中没有找到 HTML 文件</div>
+                            <div class="hint">请确保 <code>src/</code> 目录存在且包含 <code>.html</code> 文件</div>
+                        </div>
+                    `;
+                    statusText.textContent = '⚠️ 未找到工具';
+                    return;
+                }
+
+                let html = '<div class="tool-grid">';
+                for (const tool of tools) {
+                    const displayName = formatName(tool.name);
+                    const icon = getIcon(tool.name);
+                    // 清理路径，防止 XSS
+                    const safePath = tool.path.replace(/[<>"']/g, '');
+                    html += `
+                        <a href="src/${safePath}" class="tool-card" title="打开 ${displayName}">
+                            <span class="icon">${icon}</span>
+                            <span class="name">${displayName}</span>
+                            <span class="path">${safePath}</span>
+                            <span class="arrow">→</span>
+                        </a>
+                    `;
+                }
+                html += '</div>';
+                container.innerHTML = html;
+                statusText.textContent = `✅ 已加载 ${tools.length} 个工具`;
+                statusText.style.color = 'var(--cu-color-text-muted)';
+            }
+
+            // ---- 显示错误 ----
+            function showError(message, detail) {
+                container.innerHTML = `
+                    <div class="error-state">
+                        <span class="emoji">⚠️</span>
+                        <div>${message}</div>
+                        ${detail ? `<div class="detail">${detail}</div>` : ''}
+                        <div class="hint">提示：请确保页面在 Web 服务器上运行（http:// 或 https://），且 <code>src/</code> 目录可访问。</div>
+                    </div>
+                `;
+                toolCountEl.textContent = '0';
+                statusText.textContent = '❌ 扫描失败';
+                statusText.style.color = 'var(--cu-color-code-red)';
+            }
+
+            // ---- 扫描 src 目录 ----
+            async function scanSrcDirectory() {
+                // 显示加载状态
+                container.innerHTML = `
+                    <div class="loader">
+                        <div class="spinner"></div>
+                        <span>正在扫描 src 目录…</span>
+                    </div>
+                `;
+                toolCountEl.textContent = '…';
+                statusText.textContent = '⏳ 扫描中…';
+                statusText.style.color = 'var(--cu-color-text-muted)';
+                refreshBtn.disabled = true;
+
+                try {
+                    // 尝试 fetch src 目录
+                    const response = await fetch('src/', {
+                        method: 'GET',
+                        cache: 'no-cache',
+                        headers: { 'Accept': 'text/html' }
+                    });
+
+                    if (!response.ok) {
+                        let detail = `HTTP ${response.status} ${response.statusText}`;
+                        if (response.status === 404) {
+                            showError('src/ 目录不存在或无法访问', detail);
+                        } else if (response.status === 403) {
+                            showError('没有权限访问 src/ 目录', detail);
+                        } else {
+                            showError('无法访问 src/ 目录', detail);
+                        }
+                        refreshBtn.disabled = false;
+                        return;
+                    }
+
+                    const html = await response.text();
+
+                    // 用 DOMParser 解析
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(html, 'text/html');
+
+                    // 提取所有链接
+                    const links = doc.querySelectorAll('a');
+                    const files = [];
+                    const seen = new Set();
+
+                    for (const link of links) {
+                        let href = link.getAttribute('href');
+                        if (!href) continue;
+                        // 只取 .html 文件，忽略 ../../ 等
+                        if (!href.endsWith('.html')) continue;
+                        // 去掉查询参数
+                        const clean = href.split('?')[0].split('#')[0];
+                        if (!clean || !clean.endsWith('.html')) continue;
+                        // 避免重复
+                        if (seen.has(clean)) continue;
+                        seen.add(clean);
+                        // 提取文件名
+                        const name = clean.replace(/^\.\//, '').replace(/^\/+/, '');
+                        if (name) {
+                            files.push({ name: name, path: name });
+                        }
+                    }
+
+                    // 按文件名排序
+                    files.sort((a, b) => a.name.localeCompare(b.name));
+
+                    if (files.length === 0) {
+                        // 没有找到 .html 文件，但目录可能可访问
+                        // 再检查一下是否目录列表为空
+                        const hasAnyLink = doc.querySelectorAll('a').length > 0;
+                        if (!hasAnyLink) {
+                            showError('src/ 目录似乎未开启目录列表', '请配置 Web 服务器启用目录列表，或使用其他方式提供文件列表。');
+                        } else {
+                            showError('src/ 目录中没有 .html 文件', '请确认目录下存在 HTML 文件。');
+                        }
+                        refreshBtn.disabled = false;
+                        return;
+                    }
+
+                    renderTools(files);
+                    showToast(`✅ 发现 ${files.length} 个小工具`, 2000);
+
+                } catch (err) {
+                    console.error('扫描出错:', err);
+                    let detail = err.message || '未知错误';
+                    if (detail.includes('Failed to fetch') || detail.includes('NetworkError')) {
+                        showError('网络请求失败', '请确认页面在 Web 服务器上运行，且 src/ 目录可访问。');
+                    } else {
+                        showError('扫描过程中发生错误', detail);
+                    }
+                } finally {
+                    refreshBtn.disabled = false;
+                }
+            }
+
+            // ---- 刷新 ----
+            function refresh() {
+                scanSrcDirectory();
+            }
+
+            // ---- 初始化 ----
+            refreshBtn.addEventListener('click', refresh);
+
+            // 页面加载完成后自动扫描
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', scanSrcDirectory);
+            } else {
+                scanSrcDirectory();
+            }
+
+            // 如果 5 秒后还没加载完，给出提示（但不会覆盖加载状态）
+            setTimeout(() => {
+                const loader = container.querySelector('.loader');
+                if (loader) {
+                    // 还在加载中，更新提示
+                    const text = loader.querySelector('span');
+                    if (text) {
+                        text.textContent = '⏳ 仍在扫描… 请确保服务器响应正常';
+                    }
+                }
+            }, 5000);
+
+        })();
+    </script>
+
+</body>
+</html>
