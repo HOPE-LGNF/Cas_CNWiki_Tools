@@ -2,3 +2,5 @@
 为未知伤亡中文维基提供一些小工具
 
 > 注：本项目部分代码由AI辅助生成，其著作权状态依据现行法律可能存在不确定性。
+
+[链接](https://hope-lgnf.github.io/Cas_CNWiki_Tools/)
