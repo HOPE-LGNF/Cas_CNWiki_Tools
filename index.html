@@ -478,7 +478,7 @@
                     ⚙️ 未知伤亡维基 · 小工具
                     <span class="badge">工具集</span>
                 </h1>
-                <div class="subtitle">浏览并使用所有可用的小工具 · 自动扫描 <code style="background:var(--cu-color-code-bg);padding:0.1em 0.5em;border-radius:2px;font-size:0.9em;">src/</code> 目录</div>
+                <div class="subtitle">浏览并使用所有可用的小工具 · 递归扫描 <code style="background:var(--cu-color-code-bg);padding:0.1em 0.5em;border-radius:2px;font-size:0.9em;">src/</code> 所有子目录</div>
             </div>
             <div class="actions">
                 <button class="btn" id="refreshBtn" title="重新扫描 src 目录">
@@ -490,7 +490,7 @@
         <!-- ===== 统计 ===== -->
         <div class="stats" id="statsBar">
             <span>📦 工具总数：<span class="num" id="toolCount">—</span></span>
-            <span>📂 扫描目录：<code style="background:var(--cu-color-code-bg);padding:0.1em 0.5em;border-radius:2px;font-size:0.9em;">src/</code></span>
+            <span>📂 扫描目录：<code style="background:var(--cu-color-code-bg);padding:0.1em 0.5em;border-radius:2px;font-size:0.9em;">src/</code> (递归)</span>
             <span id="statusText" style="color:var(--cu-color-text-muted);">⏳ 加载中…</span>
         </div>
 
@@ -538,7 +538,6 @@
 
             // ---- 格式化文件名 ----
             function formatName(filename) {
-                // 去除 .html 后缀，将 - 和 _ 替换为空格，首字母大写
                 let name = filename.replace(/\.html$/i, '');
                 name = name.replace(/[-_]/g, ' ');
                 name = name.replace(/\b\w/g, c => c.toUpperCase());
@@ -560,6 +559,10 @@
                 if (lower.includes('help') || lower.includes('帮助')) return '❓';
                 if (lower.includes('about') || lower.includes('关于')) return 'ℹ️';
                 if (lower.includes('index') || lower.includes('主页')) return '🏠';
+                if (lower.includes('finder')) return '🔎';
+                if (lower.includes('replacer')) return '🔄';
+                if (lower.includes('id')) return '🆔';
+                if (lower.includes('wiki')) return '📖';
                 return '📄';
             }
 
@@ -572,8 +575,8 @@
                     container.innerHTML = `
                         <div class="empty-state">
                             <span class="emoji">🔎</span>
-                            <div>在 <code style="background:var(--cu-color-code-bg);padding:0.1em 0.5em;border-radius:2px;">src/</code> 目录中没有找到 HTML 文件</div>
-                            <div class="hint">请确保 <code>src/</code> 目录存在且包含 <code>.html</code> 文件</div>
+                            <div>在 <code style="background:var(--cu-color-code-bg);padding:0.1em 0.5em;border-radius:2px;">src/</code> 及其子目录中没有找到 HTML 文件</div>
+                            <div class="hint">请确保 <code>src/</code> 目录存在且包含 <code>.html</code> 文件，并且服务器开启了目录列表（autoindex）</div>
                         </div>
                     `;
                     statusText.textContent = '⚠️ 未找到工具';
@@ -584,10 +587,9 @@
                 for (const tool of tools) {
                     const displayName = formatName(tool.name);
                     const icon = getIcon(tool.name);
-                    // 清理路径，防止 XSS
                     const safePath = tool.path.replace(/[<>"']/g, '');
                     html += `
-                        <a href="src/${safePath}" class="tool-card" title="打开 ${displayName}">
+                        <a href="${safePath}" class="tool-card" title="打开 ${displayName}">
                             <span class="icon">${icon}</span>
                             <span class="name">${displayName}</span>
                             <span class="path">${safePath}</span>
@@ -608,7 +610,8 @@
                         <span class="emoji">⚠️</span>
                         <div>${message}</div>
                         ${detail ? `<div class="detail">${detail}</div>` : ''}
-                        <div class="hint">提示：请确保页面在 Web 服务器上运行（http:// 或 https://），且 <code>src/</code> 目录可访问。</div>
+                        <div class="hint">💡 提示：请确保页面在 Web 服务器上运行（http:// 或 https://），且 <code>src/</code> 目录可访问并开启了目录列表。</div>
+                        <div class="hint" style="margin-top:8px;">🔧 如果使用 GitHub Pages / Vercel 等静态托管，请改用 <strong>manifest.json</strong> 方案（见文档）。</div>
                     </div>
                 `;
                 toolCountEl.textContent = '0';
@@ -616,13 +619,85 @@
                 statusText.style.color = 'var(--cu-color-code-red)';
             }
 
-            // ---- 扫描 src 目录 ----
+            // ============================================================
+            //  核心：递归扫描 src/ 目录，收集所有 .html 文件
+            // ============================================================
+            async function scanDirectoryRecursive(basePath, relativePrefix) {
+                // basePath: 要 fetch 的目录路径，如 'src/' 或 'src/SingleFiles/'
+                // relativePrefix: 用于构建最终链接的前缀，如 '' 或 'SingleFiles/'
+                const results = [];
+
+                try {
+                    const response = await fetch(basePath, {
+                        method: 'GET',
+                        cache: 'no-cache',
+                        headers: { 'Accept': 'text/html' }
+                    });
+
+                    if (!response.ok) {
+                        // 如果某个子目录无法访问，静默忽略（可能是权限问题）
+                        console.warn(`无法访问目录: ${basePath} (${response.status})`);
+                        return results;
+                    }
+
+                    const html = await response.text();
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(html, 'text/html');
+                    const links = doc.querySelectorAll('a');
+                    const seen = new Set();
+
+                    for (const link of links) {
+                        let href = link.getAttribute('href');
+                        if (!href) continue;
+
+                        // 去掉查询参数和锚点
+                        const clean = href.split('?')[0].split('#')[0];
+                        if (!clean) continue;
+
+                        // 跳过父目录链接（如 ../）
+                        if (clean === '../' || clean === '/..' || clean.startsWith('../')) continue;
+
+                        // 如果是目录（以 / 结尾），递归进入
+                        if (clean.endsWith('/')) {
+                            // 构建子目录路径
+                            const subDirPath = basePath + clean;
+                            const subPrefix = relativePrefix + clean;
+                            const subResults = await scanDirectoryRecursive(subDirPath, subPrefix);
+                            results.push(...subResults);
+                            continue;
+                        }
+
+                        // 如果是 .html 文件，收集
+                        if (clean.endsWith('.html')) {
+                            // 去掉可能的前导 ./
+                            const fileName = clean.replace(/^\.\//, '');
+                            // 构建完整路径（相对于 src/）
+                            const fullPath = 'src/' + relativePrefix + fileName;
+                            if (!seen.has(fullPath)) {
+                                seen.add(fullPath);
+                                results.push({
+                                    name: fileName,
+                                    path: fullPath
+                                });
+                            }
+                        }
+                    }
+
+                    return results;
+
+                } catch (err) {
+                    console.warn(`扫描目录出错: ${basePath}`, err);
+                    return results;
+                }
+            }
+
+            // ---- 主扫描函数 ----
             async function scanSrcDirectory() {
                 // 显示加载状态
                 container.innerHTML = `
                     <div class="loader">
                         <div class="spinner"></div>
-                        <span>正在扫描 src 目录…</span>
+                        <span>正在递归扫描 src/ 目录…</span>
                     </div>
                 `;
                 toolCountEl.textContent = '…';
@@ -631,73 +706,45 @@
                 refreshBtn.disabled = true;
 
                 try {
-                    // 尝试 fetch src 目录
-                    const response = await fetch('src/', {
-                        method: 'GET',
-                        cache: 'no-cache',
-                        headers: { 'Accept': 'text/html' }
-                    });
+                    // 从 src/ 根目录开始递归扫描
+                    const files = await scanDirectoryRecursive('src/', '');
 
-                    if (!response.ok) {
-                        let detail = `HTTP ${response.status} ${response.statusText}`;
-                        if (response.status === 404) {
-                            showError('src/ 目录不存在或无法访问', detail);
-                        } else if (response.status === 403) {
-                            showError('没有权限访问 src/ 目录', detail);
-                        } else {
-                            showError('无法访问 src/ 目录', detail);
-                        }
-                        refreshBtn.disabled = false;
-                        return;
-                    }
-
-                    const html = await response.text();
-
-                    // 用 DOMParser 解析
-                    const parser = new DOMParser();
-                    const doc = parser.parseFromString(html, 'text/html');
-
-                    // 提取所有链接
-                    const links = doc.querySelectorAll('a');
-                    const files = [];
-                    const seen = new Set();
-
-                    for (const link of links) {
-                        let href = link.getAttribute('href');
-                        if (!href) continue;
-                        // 只取 .html 文件，忽略 ../../ 等
-                        if (!href.endsWith('.html')) continue;
-                        // 去掉查询参数
-                        const clean = href.split('?')[0].split('#')[0];
-                        if (!clean || !clean.endsWith('.html')) continue;
-                        // 避免重复
-                        if (seen.has(clean)) continue;
-                        seen.add(clean);
-                        // 提取文件名
-                        const name = clean.replace(/^\.\//, '').replace(/^\/+/, '');
-                        if (name) {
-                            files.push({ name: name, path: name });
+                    // 去重（按路径去重）
+                    const unique = [];
+                    const seenPaths = new Set();
+                    for (const f of files) {
+                        if (!seenPaths.has(f.path)) {
+                            seenPaths.add(f.path);
+                            unique.push(f);
                         }
                     }
 
                     // 按文件名排序
-                    files.sort((a, b) => a.name.localeCompare(b.name));
+                    unique.sort((a, b) => a.name.localeCompare(b.name));
 
-                    if (files.length === 0) {
-                        // 没有找到 .html 文件，但目录可能可访问
-                        // 再检查一下是否目录列表为空
-                        const hasAnyLink = doc.querySelectorAll('a').length > 0;
-                        if (!hasAnyLink) {
-                            showError('src/ 目录似乎未开启目录列表', '请配置 Web 服务器启用目录列表，或使用其他方式提供文件列表。');
-                        } else {
-                            showError('src/ 目录中没有 .html 文件', '请确认目录下存在 HTML 文件。');
+                    if (unique.length === 0) {
+                        // 尝试检查 src/ 是否可访问
+                        try {
+                            const testResp = await fetch('src/', { method: 'HEAD', cache: 'no-cache' });
+                            if (!testResp.ok) {
+                                showError('src/ 目录无法访问', `HTTP ${testResp.status} ${testResp.statusText}`);
+                                refreshBtn.disabled = false;
+                                return;
+                            }
+                        } catch (e) {
+                            showError('src/ 目录请求失败', e.message);
+                            refreshBtn.disabled = false;
+                            return;
                         }
+
+                        // 目录可访问但没有 .html 文件
+                        showError('src/ 目录及其子目录中没有找到 .html 文件', '请确认文件存在且服务器开启了目录列表（autoindex）');
                         refreshBtn.disabled = false;
                         return;
                     }
 
-                    renderTools(files);
-                    showToast(`✅ 发现 ${files.length} 个小工具`, 2000);
+                    renderTools(unique);
+                    showToast(`✅ 发现 ${unique.length} 个小工具`, 2000);
 
                 } catch (err) {
                     console.error('扫描出错:', err);
@@ -720,21 +767,19 @@
             // ---- 初始化 ----
             refreshBtn.addEventListener('click', refresh);
 
-            // 页面加载完成后自动扫描
             if (document.readyState === 'loading') {
                 document.addEventListener('DOMContentLoaded', scanSrcDirectory);
             } else {
                 scanSrcDirectory();
             }
 
-            // 如果 5 秒后还没加载完，给出提示（但不会覆盖加载状态）
+            // 超时提示
             setTimeout(() => {
                 const loader = container.querySelector('.loader');
                 if (loader) {
-                    // 还在加载中，更新提示
                     const text = loader.querySelector('span');
                     if (text) {
-                        text.textContent = '⏳ 仍在扫描… 请确保服务器响应正常';
+                        text.textContent = '⏳ 仍在扫描… 请确保服务器响应正常且开启了目录列表';
                     }
                 }
             }, 5000);
