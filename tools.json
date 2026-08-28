@@ -1,0 +1,20 @@
+[
+    {
+        "file": "cu_CN-id_finder.html",
+        "title": "CN ID Finder",
+        "desc": "快速查找 cu_CN ID 的小工具",
+        "icon": "🔍"
+    },
+    {
+        "file": "cu_CN-id_replacer.html",
+        "title": "CN ID Replacer",
+        "desc": "批量查找并替换 cu_CN ID 的小工具",
+        "icon": "🔄"
+    },
+    {
+        "file": "cu_wiki_page_finder.html",
+        "title": "Wiki Page Finder",
+        "desc": "查找 cu Wiki 页面的小工具",
+        "icon": "📄"
+    }
+]

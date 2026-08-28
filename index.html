@@ -14,7 +14,6 @@
             --text: #e6edf3;
             --text-sub: #8b949e;
             --accent: #58a6ff;
-            --accent-hover: #79b8ff;
         }
 
         body {
@@ -32,19 +31,13 @@
 
         header { text-align: center; margin-bottom: 40px; }
 
-        header h1 {
-            font-size: 2rem;
-            margin-bottom: 8px;
-        }
-
+        header h1 { font-size: 2rem; margin-bottom: 8px; }
         header h1 span { color: var(--accent); }
-
         header p { color: var(--text-sub); }
 
         .toolbar {
             display: flex;
             justify-content: center;
-            gap: 12px;
             margin-bottom: 24px;
         }
 
@@ -62,22 +55,6 @@
         }
 
         .toolbar input:focus { border-color: var(--accent); }
-
-        .toolbar button {
-            padding: 10px 18px;
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            background: var(--card-bg);
-            color: var(--text);
-            cursor: pointer;
-            font-size: 14px;
-            transition: all .2s;
-        }
-
-        .toolbar button:hover {
-            border-color: var(--accent);
-            color: var(--accent);
-        }
 
         .grid {
             display: grid;
@@ -115,10 +92,7 @@
             border-radius: 10px;
         }
 
-        .card .title {
-            font-size: 16px;
-            font-weight: 600;
-        }
+        .card .title { font-size: 16px; font-weight: 600; }
 
         .card .desc {
             font-size: 13px;
@@ -140,16 +114,6 @@
             font-size: 14px;
         }
 
-        .error-box {
-            margin-top: 30px;
-            padding: 20px;
-            border: 1px solid #f8514966;
-            background: #f8514911;
-            border-radius: 10px;
-            font-size: 13px;
-            line-height: 1.8;
-        }
-
         footer {
             text-align: center;
             margin-top: 60px;
@@ -158,158 +122,70 @@
             color: var(--text-sub);
             font-size: 13px;
         }
-
-        footer a { color: var(--accent); text-decoration: none; }
-        footer a:hover { text-decoration: underline; }
     </style>
 </head>
 <body>
     <div class="container">
         <header>
             <h1>🧰 小工具<span>集合</span></h1>
-            <p>基于纯 HTML / JS / CSS 的实用小工具，自动从 src 目录加载</p>
+            <p>基于纯 HTML / JS / CSS 的实用小工具</p>
         </header>
 
         <div class="toolbar">
             <input type="text" id="search" placeholder="🔍 搜索工具名称...">
-            <button onclick="loadTools()">刷新列表</button>
         </div>
 
         <div id="status" class="status">正在加载工具列表...</div>
         <div id="grid" class="grid"></div>
-        <div id="error"></div>
 
-        <footer>
-            Powered by <a href="https://pages.github.com" target="_blank">GitHub Pages</a> ·
-            Tools are auto-loaded from <code>src/</code> directory
-        </footer>
+        <footer>Powered by GitHub Pages</footer>
     </div>
 
     <script>
-        // ========== 配置区 ==========
-        // 如果自动识别失败，请手动填写用户名和仓库名
-        const GITHUB_USER = ""; // 例: "yourname"
-        const GITHUB_REPO = ""; // 例: "tools"
-        const SRC_DIR = "src";  // 工具所在目录
-        // ============================
+        const SRC_DIR = "src";   // 工具所在目录
+        const JSON_URL = "tools.json";
 
         let allTools = [];
-
-        // 根据当前 URL 自动推断仓库信息
-        function detectRepo() {
-            if (GITHUB_USER && GITHUB_REPO) {
-                return { user: GITHUB_USER, repo: GITHUB_REPO };
-            }
-            // GitHub Pages 格式: https://user.github.io/repo/...
-            const m = location.hostname === "pages.github.com"
-                ? null
-                : location.pathname.match(/^\/([^\/]+)\/([^\/]+)?/);
-            if (location.hostname.endsWith(".github.io")) {
-                const user = location.hostname.split(".")[0];
-                // 若无子路径，可能是 user.github.io 仓库本身
-                const repo = location.pathname.split("/").filter(Boolean)[0] || null;
-                return { user, repo };
-            }
-            return { user: null, repo: null };
-        }
-
-        // 把文件名转成好看的标题，如 cu_CN-id_finder.html -> CN ID Finder
-        function prettyName(filename) {
-            return filename
-                .replace(/\.html?$/i, "")
-                .replace(/^cu[_-]?/i, "")          // 去掉 cu 前缀（可按需调整）
-                .replace(/[_\-]/g, " ")
-                .replace(/\b\w/g, c => c.toUpperCase());
-        }
-
-        // 简单的关键字描述（可自行扩充）
-        function guessDesc(name) {
-            const n = name.toLowerCase();
-            if (n.includes("finder"))  return "快速查找 / 定位内容的辅助工具";
-            if (n.includes("replacer")) return "批量查找并替换内容的工具";
-            if (n.includes("wiki"))    return "与 Wiki 页面相关的查询工具";
-            if (n.includes("id"))      return "与 ID 处理相关的实用小工具";
-            return "一个实用的在线小工具";
-        }
 
         async function loadTools() {
             const grid = document.getElementById("grid");
             const status = document.getElementById("status");
-            const errorBox = document.getElementById("error");
-            status.style.display = "block";
-            status.textContent = "正在加载工具列表...";
-            grid.innerHTML = "";
-            errorBox.innerHTML = "";
 
-            const { user, repo } = detectRepo();
-
-            if (!user) {
-                showError("无法自动识别仓库信息。请在 index.html 顶部配置区手动填写 GITHUB_USER 和 GITHUB_REPO。");
+            try {
+                const res = await fetch(JSON_URL);
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                allTools = await res.json();
+            } catch (e) {
+                status.textContent = `❌ 加载 tools.json 失败：${e.message}`;
                 return;
             }
 
-            // API 地址：有 repo 时读取 repo/src，否则读取 <user>.github.io 仓库
-            const repoName = repo || `${user}.github.io`;
-            const apiUrl = `https://api.github.com/repos/${user}/${repoName}/contents/${SRC_DIR}`;
-
-            try {
-                const res = await fetch(apiUrl, {
-                    headers: { "Accept": "application/vnd.github.v3+json" }
-                });
-
-                if (!res.ok) {
-                    throw new Error(`GitHub API 返回 ${res.status}（仓库 ${user}/${repoName} 可能不存在或未开启 Pages）`);
-                }
-
-                const files = await res.json();
-                allTools = files.filter(f =>
-                    f.type === "file" && /\.html?$/i.test(f.name)
-                );
-
-                if (allTools.length === 0) {
-                    status.textContent = `目录 ${SRC_DIR}/ 中没有找到 HTML 文件`;
-                    return;
-                }
-
-                status.style.display = "none";
-                render(allTools);
-            } catch (e) {
-                status.style.display = "none";
-                showError(`加载失败：${e.message}`);
+            if (allTools.length === 0) {
+                status.textContent = "tools.json 中没有工具";
+                return;
             }
+
+            status.style.display = "none";
+            render(allTools);
         }
 
         function render(tools) {
-            const grid = document.getElementById("grid");
-            grid.innerHTML = tools.map(f => {
-                const title = prettyName(f.name);
-                const desc = guessDesc(f.name);
-                // 链接使用相对路径，直接指向 src/ 下的文件
-                return `
-                <a class="card" href="${SRC_DIR}/${f.name}" target="_blank">
-                    <div class="icon">⚙️</div>
-                    <div class="title">${title}</div>
-                    <div class="desc">${desc}</div>
-                    <div class="file">src/${f.name}</div>
-                </a>`;
-            }).join("");
-        }
-
-        function showError(msg) {
-            document.getElementById("error").innerHTML = `
-                <div class="error-box">
-                    ❌ ${msg}<br>
-                    💡 提示：GitHub API 对未认证请求有每小时 60 次的频率限制，
-                    若频繁遇到 403 错误，稍后再试即可。
-                </div>`;
+            document.getElementById("grid").innerHTML = tools.map(t => `
+                <a class="card" href="${SRC_DIR}/${t.file}" target="_blank">
+                    <div class="icon">${t.icon || "⚙️"}</div>
+                    <div class="title">${t.title}</div>
+                    <div class="desc">${t.desc || ""}</div>
+                    <div class="file">src/${t.file}</div>
+                </a>`).join("");
         }
 
         // 搜索过滤
         document.getElementById("search").addEventListener("input", e => {
             const kw = e.target.value.toLowerCase();
-            const filtered = allTools.filter(f =>
-                f.name.toLowerCase().includes(kw) ||
-                prettyName(f.name).toLowerCase().includes(kw)
+            const filtered = allTools.filter(t =>
+                t.title.toLowerCase().includes(kw) ||
+                t.file.toLowerCase().includes(kw) ||
+                (t.desc || "").toLowerCase().includes(kw)
             );
             if (filtered.length === 0) {
                 document.getElementById("status").style.display = "block";
