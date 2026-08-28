@@ -1,13 +1,13 @@
 [
     {
         "file": "cu_CN-id_finder.html",
-        "title": "CN ID Finder",
+        "title": "CN-ID Finder",
         "desc": "支持中文与id互查的小工具",
         "icon": "🔍"
     },
     {
         "file": "cu_CN-id_replacer.html",
-        "title": "CN ID Replacer",
+        "title": "CN-ID Replacer",
         "desc": "批量查找并替换中文为id的小工具",
         "icon": "🔄"
     },
