@@ -726,6 +726,7 @@
                         <button class="btn btn-outline" id="selectAllBtn">✓ 全选</button>
                         <button class="btn btn-outline" id="deselectAllBtn">✕ 取消全选</button>
                         <button class="btn btn-outline" id="refreshCacheBtn">🔄 刷新缓存</button>
+                        <button class="btn btn-outline" id="exportJsonBtn" disabled>📥 导出 JSON</button>
                         <span class="status-text" id="fetchStatus">就绪</span>
                     </div>
                     <div class="error-msg" id="errorMsg">
@@ -798,10 +799,8 @@
             // ================================================================
             //  配置
             // ================================================================
-            // 直接使用 HTTPS API（用户环境可正常访问）
             const API_URL = 'https://casualtiesunknown.huijiwiki.com/api.php';
 
-            // 命名空间定义（排除讨论空间 & data 空间 3500）
             const NAMESPACES = [
                 { id: 0, label: '主' },
                 { id: 2, label: '用户' },
@@ -817,7 +816,6 @@
                 { id: 2600, label: '话题' },
                 { id: 274, label: 'Html' },
                 { id: 500, label: '博客' },
-                // { id: 3500, label: '数据' },  // 排除
             ];
 
             // ================================================================
@@ -828,6 +826,7 @@
             const selectAllBtn = document.getElementById('selectAllBtn');
             const deselectAllBtn = document.getElementById('deselectAllBtn');
             const refreshCacheBtn = document.getElementById('refreshCacheBtn');
+            const exportJsonBtn = document.getElementById('exportJsonBtn');
             const fetchStatus = document.getElementById('fetchStatus');
             const errorMsg = document.getElementById('errorMsg');
             const errorText = document.getElementById('errorText');
@@ -855,8 +854,6 @@
             let toastTimer = null;
             let currentEntry = '';
             let isFetching = false;
-
-            // 缓存：key = 命名空间ID, value = 标题字符串数组
             let pageCache = {};
 
             // ================================================================
@@ -924,8 +921,7 @@
             }
 
             // ================================================================
-            //  API 调用（获取指定命名空间的所有页面标题）
-            //  返回：字符串数组
+            //  API 调用
             // ================================================================
             async function getTitlesInNamespace(namespaceId) {
                 var titles = [];
@@ -969,7 +965,7 @@
             }
 
             // ================================================================
-            //  主获取逻辑（支持缓存）
+            //  主获取逻辑
             // ================================================================
             async function fetchAllPages(forceRefresh) {
                 hideError();
@@ -982,6 +978,7 @@
                 if (isFetching) return;
                 isFetching = true;
                 fetchBtn.disabled = true;
+                exportJsonBtn.disabled = true;
                 setStatus('⏳ 正在获取...', true);
 
                 try {
@@ -998,7 +995,6 @@
                             setStatus('⏳ 获取命名空间 ' + nsId + ' (' + (i + 1) + '/' + nsIds.length + ')', true);
                             titles = await getTitlesInNamespace(nsId);
                             pageCache[nsId] = titles;
-                            // 短暂延迟避免请求过密（API 礼仪）
                             await new Promise(r => setTimeout(r, 300));
                         }
 
@@ -1017,6 +1013,9 @@
 
                     resultSection.classList.add('show');
                     renderList(filteredTitles, '');
+
+                    // 启用导出按钮
+                    exportJsonBtn.disabled = false;
 
                     var cacheInfo = '';
                     if (!forceRefresh) {
@@ -1037,6 +1036,7 @@
                     }
                     showError('获取失败：' + errorMsgText);
                     setStatus('❌ 失败', false);
+                    exportJsonBtn.disabled = true;
                 } finally {
                     isFetching = false;
                     fetchBtn.disabled = false;
@@ -1044,7 +1044,49 @@
             }
 
             // ================================================================
-            //  高亮
+            //  导出 JSON
+            // ================================================================
+            function exportJson() {
+                if (allTitles.length === 0) {
+                    showToast('❌ 没有数据可导出，请先获取页面', 2000);
+                    return;
+                }
+
+                // 构建按命名空间分组的数据
+                var grouped = {};
+                allTitles.forEach(function(item) {
+                    var nsLabel = getNamespaceLabel(item.ns);
+                    if (!grouped[nsLabel]) {
+                        grouped[nsLabel] = [];
+                    }
+                    grouped[nsLabel].push(item.title);
+                });
+
+                // 排序每个数组（按标题字母顺序）
+                for (var key in grouped) {
+                    grouped[key].sort();
+                }
+
+                var json = JSON.stringify(grouped, null, 2);
+                var blob = new Blob([json], { type: 'application/json' });
+                var url = URL.createObjectURL(blob);
+                var a = document.createElement('a');
+                a.href = url;
+                a.download = 'wiki_pages_export.json';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                showToast('📥 已导出 JSON 文件', 1500);
+            }
+
+            function getNamespaceLabel(nsId) {
+                var found = NAMESPACES.find(function(ns) { return ns.id === nsId; });
+                return found ? found.label : 'NS' + nsId;
+            }
+
+            // ================================================================
+            //  高亮 & 渲染
             // ================================================================
             function highlightText(text, query) {
                 if (!query || !text) return text;
@@ -1053,17 +1095,11 @@
                 return text.replace(regex, '<mark>$1</mark>');
             }
 
-            // ================================================================
-            //  Wiki 链接
-            // ================================================================
             function buildWikiLink(entry) {
                 var base = 'https://casualtiesunknown.huijiwiki.com/wiki/';
                 return base + encodeURIComponent(entry);
             }
 
-            // ================================================================
-            //  预览控制
-            // ================================================================
             function showWikiPreview(entry) {
                 currentEntry = entry;
                 var url = buildWikiLink(entry);
@@ -1091,9 +1127,6 @@
                 currentEntry = '';
             }
 
-            // ================================================================
-            //  渲染列表
-            // ================================================================
             function renderList(list, query) {
                 var q = (query || '').trim().toLowerCase();
 
@@ -1119,13 +1152,7 @@
                     var item = filteredTitles[idx];
                     var displayText = q ? highlightText(item.title, q) : item.title;
                     var escapedItem = item.title.replace(/"/g, '&quot;');
-                    var nsLabel = '';
-                    var found = NAMESPACES.find(function(ns) { return ns.id === item.ns; });
-                    if (found) {
-                        nsLabel = found.label;
-                    } else {
-                        nsLabel = 'NS' + item.ns;
-                    }
+                    var nsLabel = getNamespaceLabel(item.ns);
                     html +=
                         '<div class="list-item" data-value="' + escapedItem + '">' +
                         '<span class="idx">' + nsLabel + '</span>' +
@@ -1204,6 +1231,8 @@
                 showToast('🔄 缓存已清空，正在重新获取...', 1200);
                 fetchAllPages(true);
             });
+
+            exportJsonBtn.addEventListener('click', exportJson);
 
             selectAllBtn.addEventListener('click', function() {
                 setAllCheckboxes(true);
