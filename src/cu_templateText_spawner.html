@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>模板字符串生成器</title>
+    <style>
+        /* ===== 全局重置 & 字体 ===== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(145deg, #f6f9fc 0%, #e9f0f5 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            padding: 20px;
+        }
+
+        /* ===== 卡片容器 ===== */
+        .card {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-radius: 32px;
+            box-shadow: 0 20px 60px rgba(0, 20, 40, 0.12), 0 8px 24px rgba(0, 0, 0, 0.04);
+            padding: 40px 44px;
+            max-width: 640px;
+            width: 100%;
+            transition: all 0.2s ease;
+            border: 1px solid rgba(255, 255, 255, 0.5);
+        }
+
+        /* ===== 标题 ===== */
+        .header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 28px;
+        }
+
+        .header .icon {
+            font-size: 28px;
+            line-height: 1;
+        }
+
+        .header h1 {
+            font-size: 22px;
+            font-weight: 600;
+            color: #0b1c2e;
+            letter-spacing: -0.3px;
+        }
+
+        .header .badge {
+            margin-left: auto;
+            background: rgba(59, 130, 246, 0.12);
+            color: #1a5bbf;
+            font-size: 12px;
+            font-weight: 500;
+            padding: 4px 14px;
+            border-radius: 20px;
+            border: 1px solid rgba(59, 130, 246, 0.15);
+        }
+
+        /* ===== 表单分组 ===== */
+        .form-group {
+            margin-bottom: 22px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: 500;
+            color: #1e3a5f;
+            margin-bottom: 6px;
+            letter-spacing: 0.2px;
+        }
+
+        .form-group label .hint {
+            font-weight: 400;
+            color: #6b7f94;
+            font-size: 12px;
+            margin-left: 6px;
+        }
+
+        /* ===== 输入框通用 ===== */
+        input[type="text"] {
+            width: 100%;
+            padding: 12px 16px;
+            font-size: 15px;
+            font-weight: 450;
+            color: #0b1c2e;
+            background: #ffffff;
+            border: 1.5px solid #dce5ed;
+            border-radius: 14px;
+            outline: none;
+            transition: border 0.2s, box-shadow 0.2s;
+            font-family: inherit;
+        }
+
+        input[type="text"]:focus {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15);
+        }
+
+        input[type="text"]::placeholder {
+            color: #9aafc2;
+            font-weight: 400;
+        }
+
+        /* ===== 参数列表 ===== */
+        .params-container {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 14px;
+        }
+
+        .param-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            animation: fadeIn 0.25s ease;
+        }
+
+        .param-row .param-index {
+            font-size: 13px;
+            font-weight: 500;
+            color: #4b6a88;
+            min-width: 28px;
+            text-align: right;
+            user-select: none;
+        }
+
+        .param-row input {
+            flex: 1;
+        }
+
+        .param-row .btn-remove {
+            background: none;
+            border: none;
+            color: #b0c6da;
+            font-size: 20px;
+            cursor: pointer;
+            padding: 4px 6px;
+            border-radius: 8px;
+            transition: all 0.15s;
+            line-height: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+        }
+
+        .param-row .btn-remove:hover {
+            color: #e74c3c;
+            background: rgba(231, 76, 60, 0.08);
+        }
+
+        .param-row .btn-remove:disabled {
+            opacity: 0.25;
+            cursor: not-allowed;
+            background: none;
+        }
+
+        /* ===== 参数操作按钮组 ===== */
+        .param-actions {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 10px;
+            margin-top: 4px;
+        }
+
+        .btn-add {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 20px;
+            font-size: 14px;
+            font-weight: 500;
+            color: #1a5bbf;
+            background: rgba(59, 130, 246, 0.08);
+            border: 1.5px dashed #b8d0e8;
+            border-radius: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: inherit;
+        }
+
+        .btn-add:hover {
+            background: rgba(59, 130, 246, 0.14);
+            border-color: #3b82f6;
+            color: #0f4a9e;
+        }
+
+        .btn-add:active {
+            transform: scale(0.97);
+        }
+
+        /* ===== 清空按钮 ===== */
+        .btn-clear-params {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 20px;
+            font-size: 14px;
+            font-weight: 500;
+            color: #b13e3e;
+            background: rgba(220, 80, 80, 0.07);
+            border: 1.5px solid #f0d0d0;
+            border-radius: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: inherit;
+        }
+
+        .btn-clear-params:hover {
+            background: rgba(220, 80, 80, 0.13);
+            border-color: #d97a7a;
+            color: #8f2e2e;
+        }
+
+        .btn-clear-params:active {
+            transform: scale(0.97);
+        }
+
+        .btn-clear-params:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* ===== 输出区域 ===== */
+        .output-section {
+            margin-top: 28px;
+            padding-top: 24px;
+            border-top: 1.5px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .output-label {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+
+        .output-label span {
+            font-size: 13px;
+            font-weight: 500;
+            color: #1e3a5f;
+        }
+
+        .output-label .char-count {
+            font-size: 12px;
+            color: #7a94ae;
+            font-weight: 400;
+        }
+
+        .output-box {
+            position: relative;
+            background: #ffffff;
+            border-radius: 16px;
+            border: 1.5px solid #dce5ed;
+            padding: 14px 18px;
+            min-height: 60px;
+            display: flex;
+            align-items: center;
+            transition: border 0.2s, box-shadow 0.2s;
+            font-family: 'SF Mono', 'Fira Code', 'JetBrains Mono', monospace;
+            font-size: 15px;
+            color: #0b1c2e;
+            word-break: break-all;
+            line-height: 1.6;
+            cursor: pointer;
+        }
+
+        .output-box:focus-within {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.10);
+        }
+
+        .output-box .placeholder {
+            color: #a9bfd3;
+            font-family: 'Inter', sans-serif;
+            font-weight: 400;
+            font-size: 14px;
+        }
+
+        .output-box .result {
+            white-space: pre-wrap;
+        }
+
+        /* ===== 复制按钮 ===== */
+        .btn-copy {
+            position: absolute;
+            top: 10px;
+            right: 12px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 14px;
+            font-size: 13px;
+            font-weight: 500;
+            color: #ffffff;
+            background: #1a5bbf;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: inherit;
+            box-shadow: 0 4px 12px rgba(26, 91, 191, 0.25);
+            opacity: 0;
+            pointer-events: none;
+            transform: translateY(2px);
+        }
+
+        .btn-copy.visible {
+            opacity: 1;
+            pointer-events: auto;
+            transform: translateY(0);
+        }
+
+        .btn-copy:hover {
+            background: #0f4a9e;
+            box-shadow: 0 6px 16px rgba(26, 91, 191, 0.35);
+            transform: translateY(-1px);
+        }
+
+        .btn-copy:active {
+            transform: scale(0.95);
+        }
+
+        .btn-copy.copied {
+            background: #0e8b5c;
+            box-shadow: 0 4px 12px rgba(14, 139, 92, 0.30);
+        }
+
+        /* ===== 动画 ===== */
+        @keyframes fadeIn {
+            0% {
+                opacity: 0;
+                transform: translateY(-6px);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* ===== 响应式 ===== */
+        @media (max-width: 480px) {
+            .card {
+                padding: 24px 18px;
+                border-radius: 24px;
+            }
+
+            .header h1 {
+                font-size: 19px;
+            }
+
+            .param-row .param-index {
+                min-width: 20px;
+                font-size: 12px;
+            }
+
+            .output-box {
+                font-size: 14px;
+                padding: 12px 14px;
+            }
+
+            .btn-copy {
+                font-size: 12px;
+                padding: 5px 12px;
+                top: 8px;
+                right: 8px;
+            }
+
+            .param-actions {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .btn-add,
+            .btn-clear-params {
+                justify-content: center;
+            }
+        }
+
+        /* ===== 暗色滚动条 (美观) ===== */
+        ::-webkit-scrollbar {
+            width: 4px;
+            height: 4px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbdae8;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #a9bfd3;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="card">
+
+        <!-- 头部 -->
+        <div class="header">
+            <span class="icon">🧩</span>
+            <h1>模板字符串生成器</h1>
+            <span class="badge">{{ }}</span>
+        </div>
+
+        <!-- 模板名 -->
+        <div class="form-group">
+            <label for="templateName">
+                模板名
+                <span class="hint">· 如 <code style="background:#eef3f8;padding:1px 8px;border-radius:6px;font-size:12px;">user</code></span>
+            </label>
+            <input type="text" id="templateName" placeholder="输入模板名称..." value="user" />
+        </div>
+
+        <!-- 参数列表 -->
+        <div class="form-group">
+            <label>
+                参数
+                <span class="hint">· 至少 1 个</span>
+            </label>
+            <div class="params-container" id="paramsContainer">
+                <!-- 由 JS 动态渲染 -->
+            </div>
+            <div class="param-actions">
+                <button class="btn-add" id="btnAddParam">
+                    <span style="font-size:18px;line-height:1;">+</span> 添加参数
+                </button>
+                <button class="btn-clear-params" id="btnClearParams">
+                    <span style="font-size:16px;line-height:1;">✕</span> 清空参数
+                </button>
+            </div>
+        </div>
+
+        <!-- 输出 -->
+        <div class="output-section">
+            <div class="output-label">
+                <span>📋 输出结果</span>
+                <span class="char-count" id="charCount">0 字符</span>
+            </div>
+            <div class="output-box" id="outputBox">
+                <span class="placeholder" id="placeholder">输入模板名和参数后预览…</span>
+                <span class="result" id="resultText"></span>
+                <button class="btn-copy" id="btnCopy">
+                    <span style="font-size:16px;">📄</span> 复制
+                </button>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        (function() {
+            'use strict';
+
+            // ===== DOM 引用 =====
+            const templateInput = document.getElementById('templateName');
+            const paramsContainer = document.getElementById('paramsContainer');
+            const btnAdd = document.getElementById('btnAddParam');
+            const btnClear = document.getElementById('btnClearParams');
+            const resultText = document.getElementById('resultText');
+            const placeholder = document.getElementById('placeholder');
+            const charCount = document.getElementById('charCount');
+            const btnCopy = document.getElementById('btnCopy');
+            const outputBox = document.getElementById('outputBox');
+
+            // ===== 状态 =====
+            let paramValues = ['', '']; // 默认两个空参数
+
+            // ===== 渲染参数输入框 =====
+            function renderParams() {
+                paramsContainer.innerHTML = '';
+                paramValues.forEach((value, index) => {
+                    const row = document.createElement('div');
+                    row.className = 'param-row';
+
+                    const idxSpan = document.createElement('span');
+                    idxSpan.className = 'param-index';
+                    idxSpan.textContent = `${index + 1}`;
+
+                    const input = document.createElement('input');
+                    input.type = 'text';
+                    input.placeholder = `参数 ${index + 1}`;
+                    input.value = value;
+                    input.dataset.index = index;
+
+                    // 输入事件
+                    input.addEventListener('input', function(e) {
+                        paramValues[parseInt(this.dataset.index)] = this.value;
+                        updateOutput();
+                    });
+
+                    const removeBtn = document.createElement('button');
+                    removeBtn.className = 'btn-remove';
+                    removeBtn.innerHTML = '✕';
+                    removeBtn.dataset.index = index;
+                    removeBtn.disabled = paramValues.length <= 1;
+                    removeBtn.addEventListener('click', function(e) {
+                        const idx = parseInt(this.dataset.index);
+                        if (paramValues.length <= 1) return;
+                        paramValues.splice(idx, 1);
+                        renderParams();
+                        updateOutput();
+                        // 聚焦到被删位置的下一个或前一个
+                        const inputs = paramsContainer.querySelectorAll('input');
+                        if (inputs[idx]) inputs[idx].focus();
+                        else if (inputs[idx - 1]) inputs[idx - 1].focus();
+                    });
+
+                    row.appendChild(idxSpan);
+                    row.appendChild(input);
+                    row.appendChild(removeBtn);
+                    paramsContainer.appendChild(row);
+                });
+
+                // 更新移除按钮状态
+                const removeBtns = paramsContainer.querySelectorAll('.btn-remove');
+                removeBtns.forEach(btn => {
+                    btn.disabled = paramValues.length <= 1;
+                });
+
+                // 更新清空按钮状态（至少一个参数时启用）
+                btnClear.disabled = paramValues.length === 0;
+            }
+
+            // ===== 更新输出 =====
+            function updateOutput() {
+                const templateName = templateInput.value.trim() || '模版';
+                // 保留空参数，但显示时用空字符串占位
+                const params = paramValues.map(v => v.trim());
+
+                // 构建字符串: {{模版名|参数1|参数2|...}}
+                const parts = [templateName, ...params];
+                const result = `{{${parts.join('|')}}}`;
+
+                // 显示
+                resultText.textContent = result;
+                placeholder.style.display = 'none';
+
+                // 字符数
+                charCount.textContent = `${result.length} 字符`;
+
+                // 显示复制按钮
+                btnCopy.classList.add('visible');
+                btnCopy.classList.remove('copied');
+                btnCopy.textContent = '📄 复制';
+            }
+
+            // ===== 清空所有参数内容 (保留参数框) =====
+            function clearParams() {
+                if (paramValues.length === 0) return;
+                // 将所有参数值置为空字符串
+                paramValues = paramValues.map(() => '');
+                renderParams();
+                updateOutput();
+                // 聚焦到第一个参数输入框
+                const firstInput = paramsContainer.querySelector('input');
+                if (firstInput) firstInput.focus();
+            }
+
+            // ===== 复制功能 =====
+            function copyResult() {
+                const text = resultText.textContent;
+                if (!text || text === '') return;
+
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(text).then(() => {
+                        showCopyFeedback();
+                    }).catch(() => {
+                        fallbackCopy(text);
+                    });
+                } else {
+                    fallbackCopy(text);
+                }
+            }
+
+            function fallbackCopy(text) {
+                const textarea = document.createElement('textarea');
+                textarea.value = text;
+                textarea.style.position = 'fixed';
+                textarea.style.opacity = '0';
+                textarea.style.left = '-9999px';
+                textarea.style.top = '-9999px';
+                document.body.appendChild(textarea);
+                textarea.select();
+                try {
+                    document.execCommand('copy');
+                    showCopyFeedback();
+                } catch (e) {
+                    alert('复制失败，请手动复制。');
+                }
+                document.body.removeChild(textarea);
+            }
+
+            function showCopyFeedback() {
+                btnCopy.textContent = '✅ 已复制';
+                btnCopy.classList.add('copied');
+                setTimeout(() => {
+                    btnCopy.textContent = '📄 复制';
+                    btnCopy.classList.remove('copied');
+                }, 1800);
+            }
+
+            // ===== 添加参数 =====
+            function addParam() {
+                const newIndex = paramValues.length;
+                paramValues.push('');
+                renderParams();
+                // 聚焦到新添加的输入框
+                const inputs = paramsContainer.querySelectorAll('input');
+                const lastInput = inputs[inputs.length - 1];
+                if (lastInput) {
+                    lastInput.focus();
+                    lastInput.select();
+                }
+                updateOutput();
+            }
+
+            // ===== 事件绑定 =====
+            templateInput.addEventListener('input', updateOutput);
+
+            btnAdd.addEventListener('click', addParam);
+
+            btnClear.addEventListener('click', clearParams);
+
+            btnCopy.addEventListener('click', copyResult);
+
+            // ===== 初始化 =====
+            renderParams();
+            updateOutput();
+
+            // 点击输出框也可触发复制
+            outputBox.addEventListener('click', function(e) {
+                if (e.target.closest('.btn-copy')) return;
+                copyResult();
+            });
+
+            // 键盘快捷键: Enter 在参数输入框添加新参数
+            paramsContainer.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' && e.target.tagName === 'INPUT') {
+                    e.preventDefault();
+                    addParam();
+                }
+            });
+
+            // 在模板名输入框按 Enter 跳转到第一个参数
+            templateInput.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    const firstInput = paramsContainer.querySelector('input');
+                    if (firstInput) firstInput.focus();
+                }
+            });
+
+            console.log('🧩 模板生成器已启动 — 支持一键清空参数');
+        })();
+    </script>
+
+</body>
+</html>
