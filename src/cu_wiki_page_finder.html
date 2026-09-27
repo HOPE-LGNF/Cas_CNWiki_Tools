@@ -853,7 +853,6 @@
             let allTitles = [];
             let filteredTitles = [];
             let toastTimer = null;
-            let currentEntry = '';
             let isFetching = false;
             let pageCache = {};
 
@@ -1122,7 +1121,6 @@
             }
 
             function showWikiPreview(entry) {
-                currentEntry = entry;
                 var url = buildWikiLink(entry);
 
                 wikiLink.href = url;
@@ -1145,7 +1143,6 @@
                 contentFrame.src = 'about:blank';
                 loadingMask.classList.add('hide');
                 iframeError.classList.remove('show');
-                currentEntry = '';
             }
 
             function renderList(list, query) {

@@ -599,7 +599,6 @@
 
             // ===== 添加参数 =====
             function addParam() {
-                const newIndex = paramValues.length;
                 paramValues.push('');
                 renderParams();
                 // 聚焦到新添加的输入框
@@ -647,8 +646,6 @@
                     if (firstInput) firstInput.focus();
                 }
             });
-
-            console.log('🧩 模板生成器已启动 — 支持一键清空参数');
         })();
     </script>
 
