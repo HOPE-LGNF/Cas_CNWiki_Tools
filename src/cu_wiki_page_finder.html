@@ -983,6 +983,8 @@
 
                 try {
                     var allResults = [];
+                    var failedNs = [];
+                    var firstErr = null;
 
                     for (var i = 0; i < nsIds.length; i++) {
                         var nsId = nsIds[i];
@@ -993,14 +995,27 @@
                             setStatus('📦 使用缓存: NS' + nsId + ' (' + (i + 1) + '/' + nsIds.length + ')', false);
                         } else {
                             setStatus('⏳ 获取命名空间 ' + nsId + ' (' + (i + 1) + '/' + nsIds.length + ')', true);
-                            titles = await getTitlesInNamespace(nsId);
-                            pageCache[nsId] = titles;
-                            await new Promise(r => setTimeout(r, 300));
+                            try {
+                                titles = await getTitlesInNamespace(nsId);
+                                pageCache[nsId] = titles;
+                                await new Promise(r => setTimeout(r, 300));
+                            } catch (nsErr) {
+                                // 单个命名空间失败只记录，不中断其余命名空间
+                                console.error('命名空间 ' + nsId + ' 获取失败:', nsErr);
+                                if (!firstErr) firstErr = nsErr;
+                                failedNs.push(nsId);
+                                continue;
+                            }
                         }
 
                         titles.forEach(function(title) {
                             allResults.push({ title: title, ns: nsId });
                         });
+                    }
+
+                    // 全部命名空间都失败才视为整体失败
+                    if (allResults.length === 0) {
+                        throw (firstErr || new Error('没有获取到任何页面'));
                     }
 
                     allResults.sort(function(a, b) {
@@ -1025,8 +1040,16 @@
                             cacheInfo = ' (其中 ' + cachedCount + ' 个命名空间来自缓存)';
                         }
                     }
-                    setStatus('✅ 已加载 ' + allTitles.length + ' 个页面' + cacheInfo, false);
-                    showToast('✅ 成功加载 ' + allTitles.length + ' 个页面' + cacheInfo, 1500);
+                    if (failedNs.length > 0) {
+                        var partialMsg = '⚠️ 已加载 ' + allTitles.length + ' 个页面' + cacheInfo +
+                            '；命名空间 NS' + failedNs.join('、NS') + ' 获取失败，可重试或刷新缓存';
+                        showError(partialMsg);
+                        setStatus(partialMsg, false);
+                        showToast(partialMsg, 2500);
+                    } else {
+                        setStatus('✅ 已加载 ' + allTitles.length + ' 个页面' + cacheInfo, false);
+                        showToast('✅ 成功加载 ' + allTitles.length + ' 个页面' + cacheInfo, 1500);
+                    }
 
                 } catch (err) {
                     console.error(err);
