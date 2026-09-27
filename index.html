@@ -7,13 +7,14 @@
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
+        /* 与各工具页统一的浅色主题 */
         :root {
-            --bg: #0d1117;
-            --card-bg: #161b22;
-            --border: #30363d;
-            --text: #e6edf3;
-            --text-sub: #8b949e;
-            --accent: #58a6ff;
+            --bg: #F0F4FF;
+            --card-bg: #FFFFFF;
+            --border: #E2E8F0;
+            --text: #1E293B;
+            --text-sub: #64748B;
+            --accent: #4A6CF7;
         }
 
         body {
@@ -78,7 +79,7 @@
         .card:hover {
             border-color: var(--accent);
             transform: translateY(-4px);
-            box-shadow: 0 8px 24px rgba(88, 166, 255, .15);
+            box-shadow: 0 8px 24px rgba(74, 108, 247, .18);
         }
 
         .card .icon {
@@ -88,7 +89,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            background: rgba(88, 166, 255, .1);
+            background: rgba(74, 108, 247, .1);
             border-radius: 10px;
         }
 
@@ -141,11 +142,14 @@
         <footer>Powered by GitHub Pages</footer>
     </div>
 
+    <script src="src/common.js"></script>
     <script>
         const SRC_DIR = "src";   // 工具所在目录
         const JSON_URL = "tools.json";
 
         let allTools = [];
+
+        const escapeHtml = CasWiki.escapeHtml;
 
         async function loadTools() {
             const grid = document.getElementById("grid");
@@ -171,11 +175,11 @@
 
         function render(tools) {
             document.getElementById("grid").innerHTML = tools.map(t => `
-                <a class="card" href="${SRC_DIR}/${t.file}" target="_blank">
-                    <div class="icon">${t.icon || "⚙️"}</div>
-                    <div class="title">${t.title}</div>
-                    <div class="desc">${t.desc || ""}</div>
-                    <div class="file">src/${t.file}</div>
+                <a class="card" href="${SRC_DIR}/${encodeURIComponent(t.file)}" target="_blank">
+                    <div class="icon">${escapeHtml(t.icon || "⚙️")}</div>
+                    <div class="title">${escapeHtml(t.title || "")}</div>
+                    <div class="desc">${escapeHtml(t.desc || "")}</div>
+                    <div class="file">src/${escapeHtml(t.file || "")}</div>
                 </a>`).join("");
         }
 

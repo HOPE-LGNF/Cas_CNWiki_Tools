@@ -656,7 +656,7 @@
                     <div class="search-wrap">
                         <span class="icon">🔎</span>
                         <input type="text" id="searchInput" placeholder="输入中文或 ID..." autofocus />
-                        <button class="clear-btn" id="clearSearchBtn" title="清空" style="display:none;">✕</button>
+                        <button class="clear-btn" id="clearSearchBtn" title="清空" aria-label="清空搜索" style="display:none;">✕</button>
                     </div>
                     <span class="mode-badge idle" id="modeBadge">自动识别</span>
                     <label class="toggle-dsc" id="toggleDsc" title="屏蔽所有以 dsc 结尾的描述性键">
@@ -691,6 +691,7 @@
 
 <div class="toast" id="toast"></div>
 
+<script src="common.js"></script>
 <script>
 (function() {
     'use strict';
@@ -741,39 +742,19 @@
         }, duration);
     }
 
-    function escapeHtml(s) {
-        return String(s)
-            .replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;')
-            .replace(/'/g, '&#39;');
-    }
+    // 转义/高亮/剪贴板由共享库 src/common.js 提供
+    const escapeHtml = CasWiki.escapeHtml;
 
-    function escapeRegex(s) {
-        return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    }
-
+    // 高亮改为「先匹配原文、再分段转义」，避免命中落进 HTML 实体内部
     function highlight(text, query) {
-        if (!query || !text) return escapeHtml(text);
-        const q = escapeRegex(query);
-        const regex = new RegExp('(' + q + ')', 'gi');
-        return escapeHtml(text).replace(regex, '<mark>$1</mark>');
+        return CasWiki.safeHighlight(text, query);
     }
 
     async function copyText(text) {
-        try {
-            await navigator.clipboard.writeText(text);
-            showToast('✅ 已复制: ' + (text.length > 30 ? text.slice(0, 30) + '...' : text));
-        } catch (e) {
-            const ta = document.createElement('textarea');
-            ta.value = text;
-            document.body.appendChild(ta);
-            ta.select();
-            document.execCommand('copy');
-            document.body.removeChild(ta);
-            showToast('✅ 已复制');
-        }
+        const ok = await CasWiki.copyText(text);
+        showToast(ok
+            ? '✅ 已复制: ' + (text.length > 30 ? text.slice(0, 30) + '...' : text)
+            : '⚠️ 复制失败');
     }
 
     // ============================================================
@@ -949,7 +930,7 @@
                     '<span class="secondary" style="font-family:var(--mono);">id=' + escapeHtml(item.key) + '</span>' +
                     '</div>' +
                     '<span class="arrow">→</span>' +
-                    '<button class="copy-btn" data-copy="' + escapeHtml(item.key) + '" title="复制 ID">📋</button>' +
+                    '<button class="copy-btn" data-copy="' + escapeHtml(item.key) + '" title="复制 ID" aria-label="复制 ID">📋</button>' +
                     '</div>';
             } else {
                 // ID → 中文：左侧高亮 ID，右侧显示中文
@@ -962,7 +943,7 @@
                     '<span class="secondary">' + escapeHtml(item.value || '(空)') + '</span>' +
                     '</div>' +
                     '<span class="arrow">→</span>' +
-                    '<button class="copy-btn" data-copy="' + escapeHtml(item.value) + '" title="复制中文">📋</button>' +
+                    '<button class="copy-btn" data-copy="' + escapeHtml(item.value) + '" title="复制中文" aria-label="复制中文">📋</button>' +
                     '</div>';
             }
         }
@@ -988,12 +969,12 @@
             '<div class="field-block">' +
             '<div class="field-label">🔑 ID（键）</div>' +
             '<div class="field-value mono">' + escapeHtml(item.key) + '</div>' +
-            '<button class="copy-icon-btn" data-copy="' + escapeHtml(item.key) + '" title="复制 ID">📋</button>' +
+            '<button class="copy-icon-btn" data-copy="' + escapeHtml(item.key) + '" title="复制 ID" aria-label="复制 ID">📋</button>' +
             '</div>' +
             '<div class="field-block">' +
             '<div class="field-label">📝 中文名（值）</div>' +
             '<div class="field-value">' + escapeHtml(item.value || '(空字符串)') + '</div>' +
-            '<button class="copy-icon-btn" data-copy="' + escapeHtml(item.value) + '" title="复制中文">📋</button>' +
+            '<button class="copy-icon-btn" data-copy="' + escapeHtml(item.value) + '" title="复制中文" aria-label="复制中文">📋</button>' +
             '</div>' +
             '<div class="field-block">' +
             '<div class="field-label">📁 所属分类</div>' +

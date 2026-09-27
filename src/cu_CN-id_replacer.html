@@ -313,7 +313,8 @@
             font-family: "SFMono-Regular", Consolas, monospace;
             font-size: 12px;
             line-height: 1.5;
-            word-break: break-all;
+            word-break: normal;
+            overflow-wrap: break-word;
         }
         .result-list .item .arrow-sep {
             color: var(--text-3);
@@ -327,6 +328,11 @@
             margin-left: 4px;
             background: rgba(0, 0, 0, 0.06);
             color: var(--text-3);
+        }
+        .result-list .item .tag.tag-ambiguous {
+            background: var(--warning-light);
+            color: var(--warning);
+            font-weight: 600;
         }
 
         .toast {
@@ -550,7 +556,11 @@
 
     <div class="toast" id="toast"></div>
 
+    <script src="common.js"></script>
     <script>
+        (function() {
+        'use strict';
+
         // ============ 全局状态 ============
         let langData = null;
         let reverseIndex = null;
@@ -604,23 +614,30 @@
             loadStatus.innerHTML = '<span class="status-dot ' + dot + '"></span>' + text;
         }
 
-        function escapeHtml(str) {
-            return String(str)
-                .replace(/&/g, '&amp;')
-                .replace(/</g, '&lt;')
-                .replace(/>/g, '&gt;');
+        // 转义由共享库 src/common.js 提供
+        const escapeHtml = CasWiki.escapeHtml;
+
+        // 在 | 与 = 边界插入可选断行点，长片段换行时优先在参数边界断开而非词中间
+        function withBreaks(str) {
+            return escapeHtml(str).replace(/\|/g, '|<wbr>');
         }
 
         function buildReverseIndex(data) {
-            const idx = { main: {}, layer: {}, other: {}, buildings: {} };
+            const idx = {
+                main: Object.create(null),
+                layer: Object.create(null),
+                other: Object.create(null),
+                buildings: Object.create(null)
+            };
             ['main', 'layer', 'other', 'buildings'].forEach(k => {
                 const dict = data[k];
                 if (dict && typeof dict === 'object') {
-                    for (const key in dict) {
+                    for (const key of Object.keys(dict)) {
                         const val = dict[key];
-                        if (typeof val === 'string' && !(val in idx[k])) {
-                            idx[k][val] = key;
-                        }
+                        if (typeof val !== 'string') continue;
+                        // 同一中文可能对应多个 id：first 为默认采用的键，all 保留全部候选
+                        if (!idx[k][val]) idx[k][val] = { first: key, all: [] };
+                        if (idx[k][val].all.indexOf(key) === -1) idx[k][val].all.push(key);
                     }
                 }
             });
@@ -731,12 +748,12 @@
             const result = text.replace(PATTERN, (match, category, name, extra) => {
                 total++;
                 const dictKey = pickDictKey(category);
-                const dict = reverseIndex[dictKey] || {};
-                const id = dict[name];
-                if (id !== undefined) {
+                const dict = reverseIndex[dictKey] || Object.create(null);
+                const entry = dict[name];
+                if (entry !== undefined) {
                     success++;
-                    succeeded.push({ category, name, id, dictKey, extra: extra || '' });
-                    return '{{' + category + '|id=' + id + (extra || '') + '}}';
+                    succeeded.push({ category, name, id: entry.first, all: entry.all, dictKey, extra: extra || '' });
+                    return '{{' + category + '|id=' + entry.first + (extra || '') + '}}';
                 } else {
                     notFound.push({ category, name, dictKey, extra: extra || '' });
                     return match;
@@ -750,16 +767,24 @@
             convertStats.style.display = 'flex';
 
             successListCount.textContent = success;
+            let ambiguousCount = 0;
             if (succeeded.length > 0) {
                 let html = '';
                 succeeded.forEach(item => {
                     const before = '{{' + item.category + '|' + item.name + item.extra + '}}';
                     const after = '{{' + item.category + '|id=' + item.id + item.extra + '}}';
-                    html += '<div class="item">' + escapeHtml(before) +
+                    html += '<div class="item">' + withBreaks(before) +
                         '<span class="arrow-sep">→</span>' +
-                        escapeHtml(after) +
-                        '<span class="tag">' + item.dictKey + '</span>' +
-                        '</div>';
+                        withBreaks(after) +
+                        '<span class="tag">' + escapeHtml(item.dictKey) + '</span>';
+                    // 同一中文对应多个 id 时明确标注，避免静默取第一个
+                    if (item.all.length > 1) {
+                        ambiguousCount++;
+                        html += '<span class="tag tag-ambiguous" title="该中文还对应: ' +
+                            escapeHtml(item.all.filter(k => k !== item.id).join(', ')) +
+                            '（默认取第一个）">⚠ 同值 ' + item.all.length + ' 键</span>';
+                    }
+                    html += '</div>';
                 });
                 successListBody.innerHTML = html;
                 successList.style.display = 'block';
@@ -772,10 +797,10 @@
                 let html = '';
                 notFound.forEach(item => {
                     const before = '{{' + item.category + '|' + item.name + item.extra + '}}';
-                    html += '<div class="item">' + escapeHtml(before) +
+                    html += '<div class="item">' + withBreaks(before) +
                         '<span class="arrow-sep">→</span>' +
                         '未找到' +
-                        '<span class="tag">' + item.dictKey + '</span>' +
+                        '<span class="tag">' + escapeHtml(item.dictKey) + '</span>' +
                         '</div>';
                 });
                 notFoundListBody.innerHTML = html;
@@ -784,12 +809,13 @@
                 notFoundList.style.display = 'none';
             }
 
+            const ambiguousNote = ambiguousCount > 0 ? '；⚠ ' + ambiguousCount + ' 项存在同值多 id，请核对' : '';
             if (total === 0) {
                 showToast('未找到任何 {{类别|中文名}} 片段', 'warning');
             } else if (notFound.length === 0) {
-                showToast('全部转换成功（' + success + ' 项）', 'success');
+                showToast('全部转换成功（' + success + ' 项' + ambiguousNote + '）', ambiguousCount > 0 ? 'warning' : 'success');
             } else {
-                showToast('转换完成：成功 ' + success + ' / ' + total, 'warning');
+                showToast('转换完成：成功 ' + success + ' / ' + total + ambiguousNote, 'warning');
             }
         }
 
@@ -801,14 +827,8 @@
                 showToast('没有可复制的内容', 'error');
                 return;
             }
-            try {
-                await navigator.clipboard.writeText(output.value);
-                showToast('已复制到剪贴板', 'success');
-            } catch (e) {
-                output.select();
-                document.execCommand('copy');
-                showToast('已复制到剪贴板', 'success');
-            }
+            const ok = await CasWiki.copyText(output.value);
+            showToast(ok ? '已复制到剪贴板' : '复制失败，请手动复制', ok ? 'success' : 'error');
         });
 
         // ============ 用结果替换输入 ============
@@ -838,6 +858,7 @@
         updateCharCount(langText, langCharCount);
         updateCharCount(input, inputCharCount);
         setLoadStatus('', '未加载');
+        })();
     </script>
 </body>
 </html>
