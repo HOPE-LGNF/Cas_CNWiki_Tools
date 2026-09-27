@@ -314,7 +314,7 @@
             font-size: 12px;
             line-height: 1.5;
             word-break: normal;
-            overflow-wrap: anywhere;
+            overflow-wrap: break-word;
         }
         .result-list .item .arrow-sep {
             color: var(--text-3);
@@ -619,9 +619,7 @@
 
         // 在 | 与 = 边界插入可选断行点，长片段换行时优先在参数边界断开而非词中间
         function withBreaks(str) {
-            return escapeHtml(str)
-                .replace(/\|/g, '|<wbr>')
-                .replace(/=/g, '=<wbr>');
+            return escapeHtml(str).replace(/\|/g, '|<wbr>');
         }
 
         function buildReverseIndex(data) {
