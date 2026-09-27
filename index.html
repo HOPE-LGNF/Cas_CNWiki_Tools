@@ -141,11 +141,14 @@
         <footer>Powered by GitHub Pages</footer>
     </div>
 
+    <script src="src/common.js"></script>
     <script>
         const SRC_DIR = "src";   // 工具所在目录
         const JSON_URL = "tools.json";
 
         let allTools = [];
+
+        const escapeHtml = CasWiki.escapeHtml;
 
         async function loadTools() {
             const grid = document.getElementById("grid");
@@ -171,11 +174,11 @@
 
         function render(tools) {
             document.getElementById("grid").innerHTML = tools.map(t => `
-                <a class="card" href="${SRC_DIR}/${t.file}" target="_blank">
-                    <div class="icon">${t.icon || "⚙️"}</div>
-                    <div class="title">${t.title}</div>
-                    <div class="desc">${t.desc || ""}</div>
-                    <div class="file">src/${t.file}</div>
+                <a class="card" href="${SRC_DIR}/${encodeURIComponent(t.file)}" target="_blank">
+                    <div class="icon">${escapeHtml(t.icon || "⚙️")}</div>
+                    <div class="title">${escapeHtml(t.title || "")}</div>
+                    <div class="desc">${escapeHtml(t.desc || "")}</div>
+                    <div class="file">src/${escapeHtml(t.file || "")}</div>
                 </a>`).join("");
         }
 

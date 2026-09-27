@@ -1089,11 +1089,9 @@
             // ================================================================
             //  高亮 & 渲染
             // ================================================================
+            // 高亮与转义由共享库 src/common.js 提供（先按原文分段匹配、再转义）
             function highlightText(text, query) {
-                if (!query || !text) return text;
-                var q = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-                var regex = new RegExp('(' + q + ')', 'gi');
-                return text.replace(regex, '<mark>$1</mark>');
+                return CasWiki.safeHighlight(text, query);
             }
 
             function buildWikiLink(entry) {
@@ -1151,12 +1149,12 @@
                 var html = '';
                 for (var idx = 0; idx < filteredTitles.length; idx++) {
                     var item = filteredTitles[idx];
-                    var displayText = q ? highlightText(item.title, q) : item.title;
-                    var escapedItem = item.title.replace(/"/g, '&quot;');
-                    var nsLabel = getNamespaceLabel(item.ns);
+                    var displayText = q ? highlightText(item.title, q) : CasWiki.escapeHtml(item.title);
+                    var escapedItem = CasWiki.escapeHtml(item.title);
+                    var escapedLabel = CasWiki.escapeHtml(getNamespaceLabel(item.ns));
                     html +=
                         '<div class="list-item" data-value="' + escapedItem + '">' +
-                        '<span class="idx">' + nsLabel + '</span>' +
+                        '<span class="idx">' + escapedLabel + '</span>' +
                         '<span class="text">' + displayText + '</span>' +
                         '<button class="action-btn" data-wiki="' + escapedItem + '">🔗 链接</button>' +
                         '<button class="copy-btn" title="复制此项" data-copy="' + escapedItem + '">📋</button>' +
