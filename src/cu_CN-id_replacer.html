@@ -557,6 +557,9 @@
 
     <script src="common.js"></script>
     <script>
+        (function() {
+        'use strict';
+
         // ============ 全局状态 ============
         let langData = null;
         let reverseIndex = null;
@@ -844,6 +847,7 @@
         updateCharCount(langText, langCharCount);
         updateCharCount(input, inputCharCount);
         setLoadStatus('', '未加载');
+        })();
     </script>
 </body>
 </html>
