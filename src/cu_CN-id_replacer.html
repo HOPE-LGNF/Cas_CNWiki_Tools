@@ -623,11 +623,16 @@
         }
 
         function buildReverseIndex(data) {
-            const idx = { main: {}, layer: {}, other: {}, buildings: {} };
+            const idx = {
+                main: Object.create(null),
+                layer: Object.create(null),
+                other: Object.create(null),
+                buildings: Object.create(null)
+            };
             ['main', 'layer', 'other', 'buildings'].forEach(k => {
                 const dict = data[k];
                 if (dict && typeof dict === 'object') {
-                    for (const key in dict) {
+                    for (const key of Object.keys(dict)) {
                         const val = dict[key];
                         if (typeof val !== 'string') continue;
                         // 同一中文可能对应多个 id：first 为默认采用的键，all 保留全部候选
@@ -743,7 +748,7 @@
             const result = text.replace(PATTERN, (match, category, name, extra) => {
                 total++;
                 const dictKey = pickDictKey(category);
-                const dict = reverseIndex[dictKey] || {};
+                const dict = reverseIndex[dictKey] || Object.create(null);
                 const entry = dict[name];
                 if (entry !== undefined) {
                     success++;
