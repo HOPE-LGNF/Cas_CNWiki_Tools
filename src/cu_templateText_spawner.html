@@ -511,6 +511,8 @@
                     const removeBtn = document.createElement('button');
                     removeBtn.className = 'btn-remove';
                     removeBtn.innerHTML = '✕';
+                    removeBtn.setAttribute('aria-label', `删除参数 ${index + 1}`);
+                    removeBtn.title = `删除参数 ${index + 1}`;
                     removeBtn.dataset.index = index;
                     removeBtn.disabled = paramValues.length <= 1;
                     removeBtn.addEventListener('click', function(e) {

@@ -743,7 +743,7 @@
                             <input type="text" id="searchInput" placeholder="输入关键词筛选..." autofocus />
                         </div>
                         <span class="stats" id="stats">共 <strong id="totalCount">0</strong> 项 · 匹配 <strong id="matchCount">0</strong></span>
-                        <button class="clear-btn" id="clearSearchBtn" title="清空搜索">✕</button>
+                        <button class="clear-btn" id="clearSearchBtn" title="清空搜索" aria-label="清空搜索">✕</button>
                     </div>
 
                     <div class="list-container" id="listContainer">
@@ -768,7 +768,7 @@
                         <span class="link-label">
                             🔗 <a href="#" id="wikiLink" target="_blank" rel="noopener noreferrer">加载中...</a>
                         </span>
-                        <button class="close-link-btn" id="closeLinkBtn" title="关闭预览">✕</button>
+                        <button class="close-link-btn" id="closeLinkBtn" title="关闭预览" aria-label="关闭预览">✕</button>
                     </div>
                     <div class="iframe-wrapper" id="iframeWrapper">
                         <div class="loading-mask" id="loadingMask">
@@ -1179,7 +1179,7 @@
                         '<span class="idx">' + escapedLabel + '</span>' +
                         '<span class="text">' + displayText + '</span>' +
                         '<button class="action-btn" data-wiki="' + escapedItem + '">🔗 链接</button>' +
-                        '<button class="copy-btn" title="复制此项" data-copy="' + escapedItem + '">📋</button>' +
+                        '<button class="copy-btn" title="复制此项" aria-label="复制此项" data-copy="' + escapedItem + '">📋</button>' +
                         '</div>';
                 }
 

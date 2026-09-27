@@ -656,7 +656,7 @@
                     <div class="search-wrap">
                         <span class="icon">🔎</span>
                         <input type="text" id="searchInput" placeholder="输入中文或 ID..." autofocus />
-                        <button class="clear-btn" id="clearSearchBtn" title="清空" style="display:none;">✕</button>
+                        <button class="clear-btn" id="clearSearchBtn" title="清空" aria-label="清空搜索" style="display:none;">✕</button>
                     </div>
                     <span class="mode-badge idle" id="modeBadge">自动识别</span>
                     <label class="toggle-dsc" id="toggleDsc" title="屏蔽所有以 dsc 结尾的描述性键">
@@ -930,7 +930,7 @@
                     '<span class="secondary" style="font-family:var(--mono);">id=' + escapeHtml(item.key) + '</span>' +
                     '</div>' +
                     '<span class="arrow">→</span>' +
-                    '<button class="copy-btn" data-copy="' + escapeHtml(item.key) + '" title="复制 ID">📋</button>' +
+                    '<button class="copy-btn" data-copy="' + escapeHtml(item.key) + '" title="复制 ID" aria-label="复制 ID">📋</button>' +
                     '</div>';
             } else {
                 // ID → 中文：左侧高亮 ID，右侧显示中文
@@ -943,7 +943,7 @@
                     '<span class="secondary">' + escapeHtml(item.value || '(空)') + '</span>' +
                     '</div>' +
                     '<span class="arrow">→</span>' +
-                    '<button class="copy-btn" data-copy="' + escapeHtml(item.value) + '" title="复制中文">📋</button>' +
+                    '<button class="copy-btn" data-copy="' + escapeHtml(item.value) + '" title="复制中文" aria-label="复制中文">📋</button>' +
                     '</div>';
             }
         }
@@ -969,12 +969,12 @@
             '<div class="field-block">' +
             '<div class="field-label">🔑 ID（键）</div>' +
             '<div class="field-value mono">' + escapeHtml(item.key) + '</div>' +
-            '<button class="copy-icon-btn" data-copy="' + escapeHtml(item.key) + '" title="复制 ID">📋</button>' +
+            '<button class="copy-icon-btn" data-copy="' + escapeHtml(item.key) + '" title="复制 ID" aria-label="复制 ID">📋</button>' +
             '</div>' +
             '<div class="field-block">' +
             '<div class="field-label">📝 中文名（值）</div>' +
             '<div class="field-value">' + escapeHtml(item.value || '(空字符串)') + '</div>' +
-            '<button class="copy-icon-btn" data-copy="' + escapeHtml(item.value) + '" title="复制中文">📋</button>' +
+            '<button class="copy-icon-btn" data-copy="' + escapeHtml(item.value) + '" title="复制中文" aria-label="复制中文">📋</button>' +
             '</div>' +
             '<div class="field-block">' +
             '<div class="field-label">📁 所属分类</div>' +
