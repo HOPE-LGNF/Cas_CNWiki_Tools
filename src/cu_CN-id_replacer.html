@@ -550,6 +550,7 @@
 
     <div class="toast" id="toast"></div>
 
+    <script src="common.js"></script>
     <script>
         // ============ 全局状态 ============
         let langData = null;
@@ -604,12 +605,8 @@
             loadStatus.innerHTML = '<span class="status-dot ' + dot + '"></span>' + text;
         }
 
-        function escapeHtml(str) {
-            return String(str)
-                .replace(/&/g, '&amp;')
-                .replace(/</g, '&lt;')
-                .replace(/>/g, '&gt;');
-        }
+        // 转义由共享库 src/common.js 提供
+        const escapeHtml = CasWiki.escapeHtml;
 
         function buildReverseIndex(data) {
             const idx = { main: {}, layer: {}, other: {}, buildings: {} };
@@ -801,14 +798,8 @@
                 showToast('没有可复制的内容', 'error');
                 return;
             }
-            try {
-                await navigator.clipboard.writeText(output.value);
-                showToast('已复制到剪贴板', 'success');
-            } catch (e) {
-                output.select();
-                document.execCommand('copy');
-                showToast('已复制到剪贴板', 'success');
-            }
+            const ok = await CasWiki.copyText(output.value);
+            showToast(ok ? '已复制到剪贴板' : '复制失败，请手动复制', ok ? 'success' : 'error');
         });
 
         // ============ 用结果替换输入 ============

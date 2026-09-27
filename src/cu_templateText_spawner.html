@@ -466,6 +466,7 @@
 
     </div>
 
+    <script src="common.js"></script>
     <script>
         (function() {
             'use strict';
@@ -579,34 +580,10 @@
             function copyResult() {
                 const text = resultText.textContent;
                 if (!text || text === '') return;
-
-                if (navigator.clipboard && navigator.clipboard.writeText) {
-                    navigator.clipboard.writeText(text).then(() => {
-                        showCopyFeedback();
-                    }).catch(() => {
-                        fallbackCopy(text);
-                    });
-                } else {
-                    fallbackCopy(text);
-                }
-            }
-
-            function fallbackCopy(text) {
-                const textarea = document.createElement('textarea');
-                textarea.value = text;
-                textarea.style.position = 'fixed';
-                textarea.style.opacity = '0';
-                textarea.style.left = '-9999px';
-                textarea.style.top = '-9999px';
-                document.body.appendChild(textarea);
-                textarea.select();
-                try {
-                    document.execCommand('copy');
-                    showCopyFeedback();
-                } catch (e) {
-                    alert('复制失败，请手动复制。');
-                }
-                document.body.removeChild(textarea);
+                CasWiki.copyText(text).then(ok => {
+                    if (ok) showCopyFeedback();
+                    else alert('复制失败，请手动复制。');
+                });
             }
 
             function showCopyFeedback() {

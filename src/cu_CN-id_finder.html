@@ -691,6 +691,7 @@
 
 <div class="toast" id="toast"></div>
 
+<script src="common.js"></script>
 <script>
 (function() {
     'use strict';
@@ -741,18 +742,9 @@
         }, duration);
     }
 
-    function escapeHtml(s) {
-        return String(s)
-            .replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;')
-            .replace(/'/g, '&#39;');
-    }
-
-    function escapeRegex(s) {
-        return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    }
+    // 转义/正则/剪贴板由共享库 src/common.js 提供
+    const escapeHtml = CasWiki.escapeHtml;
+    const escapeRegex = CasWiki.escapeRegex;
 
     function highlight(text, query) {
         if (!query || !text) return escapeHtml(text);
@@ -762,18 +754,10 @@
     }
 
     async function copyText(text) {
-        try {
-            await navigator.clipboard.writeText(text);
-            showToast('✅ 已复制: ' + (text.length > 30 ? text.slice(0, 30) + '...' : text));
-        } catch (e) {
-            const ta = document.createElement('textarea');
-            ta.value = text;
-            document.body.appendChild(ta);
-            ta.select();
-            document.execCommand('copy');
-            document.body.removeChild(ta);
-            showToast('✅ 已复制');
-        }
+        const ok = await CasWiki.copyText(text);
+        showToast(ok
+            ? '✅ 已复制: ' + (text.length > 30 ? text.slice(0, 30) + '...' : text)
+            : '⚠️ 复制失败');
     }
 
     // ============================================================

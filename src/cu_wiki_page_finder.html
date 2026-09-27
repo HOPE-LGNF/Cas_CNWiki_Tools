@@ -792,6 +792,7 @@
     <!-- Toast -->
     <div class="toast" id="toast"></div>
 
+    <script src="common.js"></script>
     <script>
         (function() {
             'use strict';
@@ -1179,16 +1180,8 @@
                         e.stopPropagation();
                         var val = this.getAttribute('data-copy');
                         if (val) {
-                            navigator.clipboard.writeText(val).then(function() {
-                                showToast('✅ 已复制: ' + val);
-                            }).catch(function() {
-                                var ta = document.createElement('textarea');
-                                ta.value = val;
-                                document.body.appendChild(ta);
-                                ta.select();
-                                document.execCommand('copy');
-                                document.body.removeChild(ta);
-                                showToast('✅ 已复制: ' + val);
+                            CasWiki.copyText(val).then(function(ok) {
+                                showToast(ok ? '✅ 已复制: ' + val : '⚠️ 复制失败');
                             });
                         }
                     });
@@ -1270,16 +1263,8 @@
                 var textEl = item.querySelector('.text');
                 if (!textEl) return;
                 var rawText = textEl.textContent.trim();
-                navigator.clipboard.writeText(rawText).then(function() {
-                    showToast('✅ 已复制: ' + rawText, 1200);
-                }).catch(function() {
-                    var ta = document.createElement('textarea');
-                    ta.value = rawText;
-                    document.body.appendChild(ta);
-                    ta.select();
-                    document.execCommand('copy');
-                    document.body.removeChild(ta);
-                    showToast('✅ 已复制: ' + rawText, 1200);
+                CasWiki.copyText(rawText).then(function(ok) {
+                    showToast(ok ? '✅ 已复制: ' + rawText : '⚠️ 复制失败', 1200);
                 });
             });
 
