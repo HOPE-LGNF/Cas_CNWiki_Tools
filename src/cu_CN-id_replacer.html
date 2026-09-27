@@ -313,7 +313,8 @@
             font-family: "SFMono-Regular", Consolas, monospace;
             font-size: 12px;
             line-height: 1.5;
-            word-break: break-all;
+            word-break: normal;
+            overflow-wrap: anywhere;
         }
         .result-list .item .arrow-sep {
             color: var(--text-3);
@@ -616,6 +617,13 @@
         // 转义由共享库 src/common.js 提供
         const escapeHtml = CasWiki.escapeHtml;
 
+        // 在 | 与 = 边界插入可选断行点，长片段换行时优先在参数边界断开而非词中间
+        function withBreaks(str) {
+            return escapeHtml(str)
+                .replace(/\|/g, '|<wbr>')
+                .replace(/=/g, '=<wbr>');
+        }
+
         function buildReverseIndex(data) {
             const idx = { main: {}, layer: {}, other: {}, buildings: {} };
             ['main', 'layer', 'other', 'buildings'].forEach(k => {
@@ -762,10 +770,10 @@
                 succeeded.forEach(item => {
                     const before = '{{' + item.category + '|' + item.name + item.extra + '}}';
                     const after = '{{' + item.category + '|id=' + item.id + item.extra + '}}';
-                    html += '<div class="item">' + escapeHtml(before) +
+                    html += '<div class="item">' + withBreaks(before) +
                         '<span class="arrow-sep">→</span>' +
-                        escapeHtml(after) +
-                        '<span class="tag">' + item.dictKey + '</span>';
+                        withBreaks(after) +
+                        '<span class="tag">' + escapeHtml(item.dictKey) + '</span>';
                     // 同一中文对应多个 id 时明确标注，避免静默取第一个
                     if (item.all.length > 1) {
                         ambiguousCount++;
@@ -786,10 +794,10 @@
                 let html = '';
                 notFound.forEach(item => {
                     const before = '{{' + item.category + '|' + item.name + item.extra + '}}';
-                    html += '<div class="item">' + escapeHtml(before) +
+                    html += '<div class="item">' + withBreaks(before) +
                         '<span class="arrow-sep">→</span>' +
                         '未找到' +
-                        '<span class="tag">' + item.dictKey + '</span>' +
+                        '<span class="tag">' + escapeHtml(item.dictKey) + '</span>' +
                         '</div>';
                 });
                 notFoundListBody.innerHTML = html;
