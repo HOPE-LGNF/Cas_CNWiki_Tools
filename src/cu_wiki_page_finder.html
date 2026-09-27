@@ -1232,7 +1232,15 @@
                 setAllCheckboxes(false);
             });
 
-            searchInput.addEventListener('input', handleSearch);
+            // 搜索输入：防抖，避免大列表下逐键全量重渲染
+            var searchTimer = null;
+            searchInput.addEventListener('input', function() {
+                if (searchTimer) clearTimeout(searchTimer);
+                searchTimer = setTimeout(function() {
+                    searchTimer = null;
+                    handleSearch();
+                }, 120);
+            });
 
             clearSearchBtn.addEventListener('click', function() {
                 searchInput.value = '';
