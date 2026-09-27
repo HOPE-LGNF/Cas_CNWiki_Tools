@@ -935,16 +935,15 @@
                         list: 'allpages',
                         aplimit: 'max',
                         apnamespace: namespaceId,
+                        // MediaWiki 跨域匿名请求必需：不带 origin=* 时，
+                        // 跨站请求（如 GitHub Pages 页面）会被 CORS 拒绝
+                        origin: '*'
                     };
                     Object.assign(params, continueParam);
 
                     var url = API_URL + '?' + new URLSearchParams(params).toString();
 
-                    var response = await fetch(url, {
-                        headers: {
-                            'User-Agent': 'UnknownCasualtiesPageSearch/1.0 (contact: myemail@example.com)'
-                        }
-                    });
+                    var response = await fetch(url);
                     if (!response.ok) {
                         throw new Error('HTTP ' + response.status);
                     }
