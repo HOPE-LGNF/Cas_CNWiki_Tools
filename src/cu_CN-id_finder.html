@@ -742,15 +742,12 @@
         }, duration);
     }
 
-    // 转义/正则/剪贴板由共享库 src/common.js 提供
+    // 转义/高亮/剪贴板由共享库 src/common.js 提供
     const escapeHtml = CasWiki.escapeHtml;
-    const escapeRegex = CasWiki.escapeRegex;
 
+    // 高亮改为「先匹配原文、再分段转义」，避免命中落进 HTML 实体内部
     function highlight(text, query) {
-        if (!query || !text) return escapeHtml(text);
-        const q = escapeRegex(query);
-        const regex = new RegExp('(' + q + ')', 'gi');
-        return escapeHtml(text).replace(regex, '<mark>$1</mark>');
+        return CasWiki.safeHighlight(text, query);
     }
 
     async function copyText(text) {

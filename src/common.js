@@ -18,6 +18,20 @@
         return String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     }
 
+    // 安全高亮：按原文匹配后分段转义，命中部分包 <mark>。
+    // 「先转义再替换」的写法会让匹配落进 HTML 实体内部（如搜 "amp" 破坏 &amp;），此处规避。
+    function safeHighlight(text, query) {
+        if (!query || !text) return escapeHtml(text);
+        var parts = String(text).split(new RegExp('(' + escapeRegex(query) + ')', 'gi'));
+        var out = '';
+        for (var i = 0; i < parts.length; i++) {
+            out += (i % 2 === 1)
+                ? '<mark>' + escapeHtml(parts[i]) + '</mark>'
+                : escapeHtml(parts[i]);
+        }
+        return out;
+    }
+
     // 复制文本：优先 Clipboard API，失败降级到隐藏 textarea + execCommand。
     // 返回 Promise<boolean>，成功/失败的 UI 反馈由调用方决定。
     function copyText(text) {
@@ -52,6 +66,7 @@
     global.CasWiki = {
         escapeHtml: escapeHtml,
         escapeRegex: escapeRegex,
+        safeHighlight: safeHighlight,
         copyText: copyText
     };
 })(window);
