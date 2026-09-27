@@ -328,6 +328,11 @@
             background: rgba(0, 0, 0, 0.06);
             color: var(--text-3);
         }
+        .result-list .item .tag.tag-ambiguous {
+            background: var(--warning-light);
+            color: var(--warning);
+            font-weight: 600;
+        }
 
         .toast {
             position: fixed;
@@ -615,9 +620,10 @@
                 if (dict && typeof dict === 'object') {
                     for (const key in dict) {
                         const val = dict[key];
-                        if (typeof val === 'string' && !(val in idx[k])) {
-                            idx[k][val] = key;
-                        }
+                        if (typeof val !== 'string') continue;
+                        // 同一中文可能对应多个 id：first 为默认采用的键，all 保留全部候选
+                        if (!idx[k][val]) idx[k][val] = { first: key, all: [] };
+                        if (idx[k][val].all.indexOf(key) === -1) idx[k][val].all.push(key);
                     }
                 }
             });
@@ -729,11 +735,11 @@
                 total++;
                 const dictKey = pickDictKey(category);
                 const dict = reverseIndex[dictKey] || {};
-                const id = dict[name];
-                if (id !== undefined) {
+                const entry = dict[name];
+                if (entry !== undefined) {
                     success++;
-                    succeeded.push({ category, name, id, dictKey, extra: extra || '' });
-                    return '{{' + category + '|id=' + id + (extra || '') + '}}';
+                    succeeded.push({ category, name, id: entry.first, all: entry.all, dictKey, extra: extra || '' });
+                    return '{{' + category + '|id=' + entry.first + (extra || '') + '}}';
                 } else {
                     notFound.push({ category, name, dictKey, extra: extra || '' });
                     return match;
@@ -747,6 +753,7 @@
             convertStats.style.display = 'flex';
 
             successListCount.textContent = success;
+            let ambiguousCount = 0;
             if (succeeded.length > 0) {
                 let html = '';
                 succeeded.forEach(item => {
@@ -755,8 +762,15 @@
                     html += '<div class="item">' + escapeHtml(before) +
                         '<span class="arrow-sep">→</span>' +
                         escapeHtml(after) +
-                        '<span class="tag">' + item.dictKey + '</span>' +
-                        '</div>';
+                        '<span class="tag">' + item.dictKey + '</span>';
+                    // 同一中文对应多个 id 时明确标注，避免静默取第一个
+                    if (item.all.length > 1) {
+                        ambiguousCount++;
+                        html += '<span class="tag tag-ambiguous" title="该中文还对应: ' +
+                            escapeHtml(item.all.filter(k => k !== item.id).join(', ')) +
+                            '（默认取第一个）">⚠ 同值 ' + item.all.length + ' 键</span>';
+                    }
+                    html += '</div>';
                 });
                 successListBody.innerHTML = html;
                 successList.style.display = 'block';
@@ -781,12 +795,13 @@
                 notFoundList.style.display = 'none';
             }
 
+            const ambiguousNote = ambiguousCount > 0 ? '；⚠ ' + ambiguousCount + ' 项存在同值多 id，请核对' : '';
             if (total === 0) {
                 showToast('未找到任何 {{类别|中文名}} 片段', 'warning');
             } else if (notFound.length === 0) {
-                showToast('全部转换成功（' + success + ' 项）', 'success');
+                showToast('全部转换成功（' + success + ' 项' + ambiguousNote + '）', ambiguousCount > 0 ? 'warning' : 'success');
             } else {
-                showToast('转换完成：成功 ' + success + ' / ' + total, 'warning');
+                showToast('转换完成：成功 ' + success + ' / ' + total + ambiguousNote, 'warning');
             }
         }
 
